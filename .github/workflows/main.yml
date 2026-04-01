@@ -1,0 +1,22 @@
+name: Build Android APK
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create APK
+        uses: cpina/github-action-html-to-apk@v2.0.0
+        with:
+          app_name: "ProgressHub"
+          # Leave icon blank for now to use the default Android one
+          icon: "" 
+          
+      - name: Save APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProgressHub-App
+          path: ./*.apk
