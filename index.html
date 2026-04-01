@@ -3,143 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSAP 2.0 | Command Center</title>
+    <title>SSAP 2.0 | Educator Command Center</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --primary: #2e7d32; --accent: #4caf50; --bg: #f4f7f6; --card: #ffffff;
             --text: #2c3e50; --border: #eeeeee; --shadow: rgba(0,0,0,0.08);
-            --xp-color: #f1c40f; --duck-yellow: #ffeb3b;
+            --splash-bg: #000000; --xp-gold: #f1c40f;
         }
+
         [data-theme="dark"] {
             --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333333; --shadow: rgba(0,0,0,0.4);
         }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 0; margin: 0; overflow-x: hidden; }
         
-        /* --- NAVIGATION TABS --- */
+        /* --- SPLASH SCREEN --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--splash-bg);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease-out, visibility 0.8s;
+            color: white; text-align: center;
+        }
+        #splash-video { width: 300px; max-width: 85%; height: auto; display: block; margin: 0 auto 15px auto; }
+        .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; }
+        .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
+        .loading-bar-mini { width: 100px; height: 2px; background: #333; margin: 20px auto; position: relative; overflow: hidden; }
+        .loading-bar-mini::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: loading 2s infinite; }
+        @keyframes loading { to { left: 100%; } }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+        .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        /* --- TABS --- */
         .nav-tabs { display: flex; background: #000; padding: 10px 20px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .tab-btn { background: transparent; border: none; color: #888; padding: 10px 20px; cursor: pointer; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; transition: 0.3s; }
+        .tab-btn { background: transparent; border: none; color: #666; padding: 12px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
         .tab-btn.active { color: #fff; border-bottom: 2px solid var(--accent); }
 
-        .container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 20px; opacity: 0; transition: opacity 1s ease-in; }
+        .app-loaded .container { opacity: 1; }
         .page { display: none; }
         .page.active { display: block; }
 
-        .input-card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        /* --- UI COMPONENTS --- */
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .input-card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px var(--shadow); border: 1px solid var(--border); margin-bottom: 30px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.7rem; color: var(--primary); text-transform: uppercase; }
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
-        
-        /* --- XP SYSTEM --- */
-        .xp-controls { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-xp { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .gain { background: var(--xp-color); color: #000; }
-        .loss { background: #e74c3c; color: #fff; }
-        
-        /* --- DUCK BONUS PAGE --- */
-        .duck-container { text-align: center; margin-bottom: 20px; }
-        #the-duck { font-size: 3rem; cursor: pointer; user-select: none; display: inline-block; transition: 0.2s; }
-        #the-duck:active { transform: scale(1.3) rotate(15deg); }
-        .comment-card { background: #fff8e1; border-left: 5px solid #ffd54f; padding: 15px; margin-bottom: 10px; border-radius: 4px; color: #333; }
-        [data-theme="dark"] .comment-card { background: #2d2d2d; color: #eee; border-color: #f1c40f; }
+        .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
 
-        /* --- GLOBAL UI --- */
-        .btn-save { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .filter-bar input { flex: 1; min-width: 150px; }
-        .item-card { background: var(--card); padding: 20px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 15px; position: relative; }
-        .action-btns { position: absolute; top: 15px; right: 15px; }
-        .delete-btn { color: #e74c3c; cursor: pointer; font-size: 0.8rem; background: none; border: none; }
+        /* --- XP & CARDS --- */
+        .xp-badge { background: var(--xp-gold); color: #000; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.7rem; }
+        .leaderboard { background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--xp-gold); }
+        .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
+        .section-label { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; margin-top: 15px; color: var(--accent); }
+        .status-badge { font-size: 0.6rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 10px; }
+
+        /* --- DUCK PAGE --- */
+        .duck-box { text-align: center; margin-bottom: 20px; }
+        #the-duck { font-size: 3.5rem; cursor: pointer; display: inline-block; transition: 0.2s; user-select: none; }
+        #the-duck:active { transform: scale(1.3); }
+        .comment-card { background: #fffde7; border-left: 4px solid #fbc02d; padding: 15px; margin-bottom: 10px; border-radius: 4px; color: #333; }
+        
+        .action-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
+        .no-export { display: none !important; }
     </style>
 </head>
-<body>
+<body data-theme="light">
+
+<div id="splash-screen">
+    <div class="logo-container">
+        <video id="splash-video" muted playsinline preload="auto">
+            <source src="animation.mp4" type="video/mp4">
+        </video>
+        <h1 class="logo-text">SSAP 2.0</h1>
+        <div class="loading-bar-mini" id="loader"></div>
+        <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none;">Tap to start</button>
+    </div>
+</div>
+    
+<audio id="startup-sound" src="startup.mp3"></audio>
 
 <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="showPage('daily')">📅 Daily Assessment</button>
+    <button class="tab-btn active" onclick="showPage('daily')">📅 Daily</button>
     <button class="tab-btn" onclick="showPage('monthly')">📊 Monthly SSAP</button>
-    <button class="tab-btn" onclick="showPage('bonus')">🦆 Bonus Q&A</button>
+    <button class="tab-btn" onclick="showPage('bonus')">🦆 Bonus</button>
 </nav>
 
 <div class="container">
-    
+    <div class="header-box">
+        <h2 style="margin:0; font-weight: 300;">SSAP <span style="color:var(--primary); font-weight: 800;">2.0</span></h2>
+        <button class="theme-btn" onclick="toggleTheme()" id="themeText" style="background: var(--card); border: 1px solid var(--border); padding: 5px 15px; border-radius: 20px; cursor: pointer;">🌙 Dark</button>
+    </div>
+
     <div id="page-daily" class="page active">
+        <div class="leaderboard" id="xpLeaderboard">🏆 XP Leaderboard: No data yet</div>
         <div class="input-card">
-            <h3>Daily Tracker</h3>
             <form id="dailyForm">
                 <div class="form-grid">
                     <div><label>Name</label><input type="text" id="d-name" required></div>
                     <div><label>STI</label><input type="text" id="d-sti"></div>
                     <div><label>Date</label><input type="date" id="d-date"></div>
-                    <div class="full"><label>Behavior & Notes</label><textarea id="d-notes" rows="2"></textarea></div>
-                    <div class="full">
-                        <label>XP Points Change</label>
-                        <input type="number" id="d-xp" value="0">
-                        <div class="xp-controls">
-                            <button type="button" class="btn-xp gain" onclick="adjustXP(10)">+10 XP (Homework)</button>
-                            <button type="button" class="btn-xp loss" onclick="adjustXP(-10)">-10 XP (Behavior)</button>
-                        </div>
-                    </div>
+                    <div class="full"><label>XP Change (+/-)</label><input type="number" id="d-xp" value="0"></div>
+                    <div class="full"><label>Notes / Behavior</label><textarea id="d-notes" rows="2"></textarea></div>
                 </div>
-                <button type="submit" class="btn-save">Log Daily Activity</button>
+                <button type="submit" class="btn-add">Log Daily Activity</button>
             </form>
         </div>
-        
-        <div class="filter-bar">
-            <input type="text" id="f-name" placeholder="Filter by Name..." oninput="renderDaily()">
-            <input type="text" id="f-sti" placeholder="Filter STI..." oninput="renderDaily()">
-            <input type="date" id="f-date" oninput="renderDaily()">
+        <div class="form-grid" style="margin-bottom: 20px;">
+            <input type="text" id="searchDaily" placeholder="Filter by name/STI..." oninput="renderDaily()">
         </div>
         <div id="dailyList"></div>
     </div>
 
     <div id="page-monthly" class="page">
         <div class="input-card">
-            <h3>Monthly SSAP Report</h3>
-            <form id="monthlyForm">
+            <form id="studentForm">
                 <div class="form-grid">
-                    <div><label>Name</label><input type="text" id="m-name" required></div>
-                    <div><label>STI</label><input type="text" id="m-sti"></div>
-                    <div><label>Unit</label><input type="text" id="m-unit"></div>
-                    <div class="full"><label>Course</label><input type="text" id="m-course"></div>
-                    <div class="full"><label>Listening & Speaking</label><textarea id="m-ls" rows="3"></textarea></div>
-                    <div class="full"><label>Reading & Writing</label><textarea id="m-rw" rows="3"></textarea></div>
-                    <div class="full"><label>Overall Summary</label><textarea id="m-overall" rows="3"></textarea></div>
+                    <div><label>Name</label><input type="text" id="name" required></div>
+                    <div><label>STI</label><input type="text" id="sti"></div>
+                    <div><label>Unit</label><input type="text" id="unit"></div>
+                    <div class="full"><label>Course</label><input type="text" id="course"></div>
+                    <div class="full"><label>L & S</label><textarea id="ls" rows="2"></textarea></div>
+                    <div class="full"><label>R & W</label><textarea id="rw" rows="2"></textarea></div>
+                    <div class="full"><label>Overall</label><textarea id="overall" rows="2"></textarea></div>
+                    <div class="full">
+                        <select id="statusOverride">
+                            <option value="auto">🤖 Auto-Detect</option>
+                            <option value="good">🟢 Excelling</option>
+                            <option value="developing">🟡 Developing</option>
+                            <option value="support">🔴 Support Needed</option>
+                        </select>
+                    </div>
                 </div>
-                <button type="submit" class="btn-save">Generate Monthly Report</button>
+                <button type="submit" id="submitBtn" class="btn-add">Save Monthly Record</button>
             </form>
         </div>
-        <div id="monthlyList"></div>
+        <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
+        <div id="studentList"></div>
     </div>
 
     <div id="page-bonus" class="page">
-        <div class="duck-container">
-            <div id="the-duck" onclick="duckClick()">🦆</div>
-            <p style="font-size: 0.7rem; opacity: 0.5;">The all-seeing duck watches your English progress...</p>
+        <div class="duck-box">
+            <div id="the-duck" onclick="duckSecret()">🦆</div>
+            <p style="font-size:0.6rem; opacity:0.5">Click the duck 8 times for Admin Mode</p>
         </div>
         <div class="input-card">
             <form id="bonusForm">
-                <label>Student Name</label>
-                <input type="text" id="b-name" required style="margin-bottom: 10px;">
-                <label>English Comment / Question</label>
-                <textarea id="b-msg" rows="3" placeholder="Write something in English..."></textarea>
-                <button type="submit" class="btn-save" style="background:#f1c40f; color:#000;">Submit to Wall</button>
+                <label>Student Name</label><input type="text" id="b-name" required><br><br>
+                <label>Q&A / English Note</label><textarea id="b-msg" rows="3"></textarea>
+                <button type="submit" class="btn-add" style="background:#f1c40f; color:#000;">Post to Wall</button>
             </form>
         </div>
         <div id="bonusList"></div>
     </div>
-
 </div>
 
 <script>
-    let dailyLogs = JSON.parse(localStorage.getItem('ssap_daily')) || [];
-    let monthlyLogs = JSON.parse(localStorage.getItem('ssap_monthly')) || [];
-    let bonusLogs = JSON.parse(localStorage.getItem('ssap_bonus')) || [];
-    
+    let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+    let dailyLogs = JSON.parse(localStorage.getItem('stu_daily')) || [];
+    let bonusLogs = JSON.parse(localStorage.getItem('stu_bonus')) || [];
+    let editIdx = null;
     let duckCount = 0;
     let isAdmin = false;
 
-    // --- TAB SYSTEM ---
+    // --- SPLASH & AUDIO ---
+    function hideSplash() {
+        document.getElementById('splash-screen').classList.add('splash-hidden');
+        document.body.classList.add('app-loaded');
+    }
+
+    window.addEventListener('load', () => {
+        const startBtn = document.getElementById('start-btn');
+        const video = document.getElementById('splash-video');
+        const audio = document.getElementById('startup-sound');
+        document.getElementById('loader').style.display = 'none';
+        startBtn.style.display = 'inline-block';
+        startBtn.addEventListener('click', () => {
+            audio.play().catch(e => console.log("Audio block")); video.play().catch(e => console.log("Video block"));
+            startBtn.style.display = 'none';
+            video.onended = hideSplash; setTimeout(hideSplash, 4000); 
+        });
+    });
+
+    // --- TABS ---
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -148,98 +199,107 @@
         renderAll();
     }
 
-    // --- XP & DAILY LOGIC ---
-    function adjustXP(val) { document.getElementById('d-xp').value = parseInt(document.getElementById('d-xp').value) + val; }
-
+    // --- LOGIC: DAILY ---
     document.getElementById('dailyForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const entry = {
             name: document.getElementById('d-name').value,
             sti: document.getElementById('d-sti').value,
             date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
-            notes: document.getElementById('d-notes').value,
-            xp: document.getElementById('d-xp').value
+            xp: parseInt(document.getElementById('d-xp').value),
+            notes: document.getElementById('d-notes').value
         };
         dailyLogs.unshift(entry);
-        localStorage.setItem('ssap_daily', JSON.stringify(dailyLogs));
+        localStorage.setItem('stu_daily', JSON.stringify(dailyLogs));
         e.target.reset(); renderDaily();
     });
 
-    // --- MONTHLY LOGIC ---
-    document.getElementById('monthlyForm').addEventListener('submit', (e) => {
+    function renderDaily() {
+        const list = document.getElementById('dailyList');
+        const search = document.getElementById('searchDaily').value.toLowerCase();
+        list.innerHTML = '';
+        
+        // Update Leaderboard
+        const totals = {};
+        dailyLogs.forEach(l => totals[l.name] = (totals[l.name] || 0) + l.xp);
+        const top = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,3);
+        document.getElementById('xpLeaderboard').innerHTML = "🏆 Leaderboard: " + top.map(t => `${t[0]} (${t[1]} XP)`).join(" | ");
+
+        dailyLogs.forEach((l, i) => {
+            if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
+            list.innerHTML += `
+                <div class="student-card">
+                    <button onclick="deleteItem('daily', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
+                    <strong>${l.name}</strong> <span class="xp-badge">${l.xp > 0 ? '+'+l.xp : l.xp} XP</span>
+                    <div style="font-size:0.8rem; opacity:0.6">${l.date}</div>
+                    <div style="margin-top:10px;">${l.notes}</div>
+                </div>`;
+        });
+    }
+
+    // --- LOGIC: MONTHLY ---
+    function getStatus(txt, override) {
+        if (override !== "auto") {
+            const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
+            return { label: map[override][0], color: map[override][1] };
+        }
+        const t = (txt || "").toLowerCase();
+        if (["tốt", "vượt trội", "good", "excellent"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
+        if (["yếu", "cần hỗ trợ", "support", "weak"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
+        return { label: "Developing", color: "#ffa000" };
+    }
+
+    document.getElementById('studentForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        const entry = {
-            name: document.getElementById('m-name').value, sti: document.getElementById('m-sti').value,
-            unit: document.getElementById('m-unit').value, course: document.getElementById('m-course').value,
-            ls: document.getElementById('m-ls').value, rw: document.getElementById('m-rw').value,
-            overall: document.getElementById('m-overall').value, date: new Date().toLocaleDateString()
+        const data = {
+            name: document.getElementById('name').value, sti: document.getElementById('sti').value,
+            unit: document.getElementById('unit').value, course: document.getElementById('course').value,
+            ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
+            overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value
         };
-        monthlyLogs.unshift(entry);
-        localStorage.setItem('ssap_monthly', JSON.stringify(monthlyLogs));
+        if (editIdx !== null) { students[editIdx] = data; editIdx = null; } 
+        else { students.unshift(data); }
+        localStorage.setItem('stu_final_v2', JSON.stringify(students));
         e.target.reset(); renderMonthly();
     });
 
-    // --- BONUS LOGIC & DUCK SECRET ---
-    function duckClick() {
+    function renderMonthly() {
+        const list = document.getElementById('studentList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        list.innerHTML = '';
+        students.forEach((s, i) => {
+            if (!s.name.toLowerCase().includes(search)) return;
+            const status = getStatus(s.overall, s.statusOverride || "auto");
+            list.innerHTML += `
+                <div class="student-card">
+                    <div class="action-btns">
+                        <button onclick="downloadPDF(${i})">📥</button>
+                        <button onclick="deleteItem('monthly', ${i})">🗑️</button>
+                    </div>
+                    <h3>${s.name} <span style="opacity:0.5; font-size:0.8rem;">#${s.sti}</span></h3>
+                    <div class="section-label">Overall Summary</div>
+                    <div style="font-size:0.9rem">${s.overall}</div>
+                    <div class="status-badge" style="background:${status.color}">${status.label}</div>
+                </div>`;
+        });
+    }
+
+    // --- LOGIC: BONUS ---
+    function duckSecret() {
         duckCount++;
-        if (duckCount === 8) {
+        if(duckCount === 8) {
             isAdmin = !isAdmin;
-            alert(isAdmin ? "ADMIN MODE: ACTIVATED. You can now delete comments." : "ADMIN MODE: DEACTIVATED.");
-            duckCount = 0;
-            renderBonus();
+            alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED");
+            duckCount = 0; renderBonus();
         }
     }
 
     document.getElementById('bonusForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        const entry = {
-            name: document.getElementById('b-name').value,
-            msg: document.getElementById('b-msg').value,
-            time: new Date().toLocaleString()
-        };
-        bonusLogs.unshift(entry);
-        localStorage.setItem('ssap_bonus', JSON.stringify(bonusLogs));
+        bonusLogs.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
+        localStorage.setItem('stu_bonus', JSON.stringify(bonusLogs));
         e.target.reset(); renderBonus();
     });
-
-    // --- RENDER FUNCTIONS ---
-    function renderDaily() {
-        const list = document.getElementById('dailyList');
-        const fName = document.getElementById('f-name').value.toLowerCase();
-        const fSti = document.getElementById('f-sti').value;
-        const fDate = document.getElementById('f-date').value;
-
-        list.innerHTML = '';
-        dailyLogs.forEach((log, i) => {
-            if ((fName && !log.name.toLowerCase().includes(fName)) || 
-                (fSti && log.sti !== fSti) || 
-                (fDate && log.date !== fDate)) return;
-
-            list.innerHTML += `
-                <div class="item-card">
-                    <div class="action-btns"><button class="delete-btn" onclick="deleteLog('daily', ${i})">🗑️</button></div>
-                    <strong>${log.name}</strong> <span style="font-size:0.7rem">(${log.date})</span>
-                    <div style="margin-top:5px; font-size:0.9rem;">${log.notes}</div>
-                    <div style="color:var(--xp-color); font-weight:bold; margin-top:5px;">XP: ${log.xp > 0 ? '+'+log.xp : log.xp}</div>
-                </div>`;
-        });
-    }
-
-    function renderMonthly() {
-        const list = document.getElementById('monthlyList');
-        list.innerHTML = '';
-        monthlyLogs.forEach((s, i) => {
-            list.innerHTML += `
-                <div class="item-card">
-                    <div class="action-btns">
-                        <button class="delete-btn" onclick="deleteLog('monthly', ${i})">🗑️</button>
-                    </div>
-                    <h3>${s.name} <span style="font-weight:100">#${s.sti}</span></h3>
-                    <p style="font-size:0.8rem; opacity:0.7">${s.course} • Unit ${s.unit}</p>
-                    <div style="font-size:0.9rem; white-space:pre-wrap;">${s.overall}</div>
-                </div>`;
-        });
-    }
 
     function renderBonus() {
         const list = document.getElementById('bonusList');
@@ -247,25 +307,38 @@
         bonusLogs.forEach((b, i) => {
             list.innerHTML += `
                 <div class="comment-card">
-                    ${isAdmin ? `<button class="delete-btn" style="float:right" onclick="deleteLog('bonus', ${i})">❌ Delete</button>` : ''}
-                    <div style="font-size:0.7rem; font-weight:bold; color:var(--primary)">${b.name} (${b.time})</div>
-                    <div style="margin-top:5px italic">"${b.msg}"</div>
+                    ${isAdmin ? `<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>` : ''}
+                    <strong>${b.name}</strong> <span style="font-size:0.6rem; opacity:0.5">${b.date}</span>
+                    <p>"${b.msg}"</p>
                 </div>`;
         });
     }
 
-    function deleteLog(type, i) {
-        if (!confirm("Are you sure?")) return;
-        if (type === 'daily') dailyLogs.splice(i, 1);
-        if (type === 'monthly') monthlyLogs.splice(i, 1);
-        if (type === 'bonus') bonusLogs.splice(i, 1);
-        localStorage.setItem('ssap_'+type, JSON.stringify(eval(type+'Logs')));
+    // --- HELPERS ---
+    function deleteItem(type, i) {
+        if(!confirm("Delete?")) return;
+        if(type === 'daily') dailyLogs.splice(i, 1);
+        if(type === 'monthly') students.splice(i, 1);
+        if(type === 'bonus') bonusLogs.splice(i, 1);
+        localStorage.setItem('stu_daily', JSON.stringify(dailyLogs));
+        localStorage.setItem('stu_final_v2', JSON.stringify(students));
+        localStorage.setItem('stu_bonus', JSON.stringify(bonusLogs));
         renderAll();
     }
 
+    function downloadPDF(index) {
+        const card = document.querySelectorAll('.student-card')[index];
+        html2pdf().from(card).save(`Report_${students[index].name}.pdf`);
+    }
+
+    function toggleTheme() {
+        const b = document.body;
+        const isLight = b.getAttribute('data-theme') === 'light';
+        b.setAttribute('data-theme', isLight ? 'dark' : 'light');
+        document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
+    }
+
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
-    
-    // Set default date to today
     document.getElementById('d-date').valueAsDate = new Date();
     renderAll();
 </script>
