@@ -19,7 +19,7 @@ jobs:
 
       - name: Create App
         run: |
-          cordova create myapp com.progresshub.app "ProgressHub"
+          cordova create myapp com.ssap.app "SSAP"
           cp index.html myapp/www/
           cd myapp
           cordova platform add android
