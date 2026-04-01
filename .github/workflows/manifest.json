@@ -1,0 +1,16 @@
+{
+  "short_name": "SSAP 2.0",
+  "name": "Student Support & Assessment",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#2e7d32"
+}
