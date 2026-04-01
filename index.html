@@ -3,137 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSAP 2.0 | AI Educator Assistant</title>
+    <title>SSAP 2.0 | Heavy-Duty Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root {
-            --primary: #2e7d32;
-            --accent: #4caf50;
-            --bg: #f4f7f6;
-            --card: #ffffff;
-            --text: #2c3e50;
-            --border: #eeeeee;
-            --shadow: rgba(0,0,0,0.08);
-            --splash-bg: #000000;
-        }
-
-        [data-theme="dark"] {
-            --bg: #121212;
-            --card: #1e1e1e;
-            --text: #e0e0e0;
-            --border: #333333;
-            --shadow: rgba(0,0,0,0.4);
-        }
-
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 0; margin: 0; overflow-x: hidden; }
-        
-        /* --- SPLASH SCREEN --- */
-        #splash-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--splash-bg);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 9999;
-            transition: opacity 0.8s ease-out, visibility 0.8s;
-            color: white; text-align: center;
-        }
-
-        #splash-video { width: 300px; max-width: 85%; height: auto; display: block; margin: 0 auto 15px auto; }
-        .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; }
-        .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
-        .loading-bar-mini { width: 100px; height: 2px; background: #333; margin: 20px auto; position: relative; overflow: hidden; }
-        .loading-bar-mini::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: loading 2s infinite; }
-        @keyframes loading { to { left: 100%; } }
-        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-        .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-
-        /* --- MAIN INTERFACE --- */
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; opacity: 0; transition: opacity 1s ease-in; }
-        .app-loaded .container { opacity: 1; }
-        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .theme-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        .search-input { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); color: var(--text); margin-bottom: 20px; box-shadow: 0 2px 5px var(--shadow); box-sizing: border-box; }
+        :root { --primary: #2e7d32; --accent: #4caf50; --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; --border: #eeeeee; --shadow: rgba(0,0,0,0.08); }
+        [data-theme="dark"] { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333333; --shadow: rgba(0,0,0,0.4); }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .theme-btn { background: var(--card); border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; cursor: pointer; color: var(--text); font-size: 0.8rem; }
         .input-card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px var(--shadow); border: 1px solid var(--border); margin-bottom: 30px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .full { grid-column: 1 / -1; }
-        label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.75rem; color: var(--primary); text-transform: uppercase; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; font-size: 0.95rem; }
-        .ai-box { background: rgba(103, 58, 183, 0.04); border: 1px dashed #673ab7; padding: 15px; border-radius: 8px; margin-top: 10px; }
-        .btn-ai { background: #673ab7; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        label { display: block; font-weight: 700; font-size: 0.7rem; color: var(--primary); text-transform: uppercase; margin-bottom: 5px; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 0.9rem; }
+        .btn-ai { background: #673ab7; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        .btn-ai:disabled { background: #ccc; cursor: not-allowed; }
         .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; font-size: 1rem; }
         
-        /* --- STUDENT CARD --- */
-        .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 4px 15px var(--shadow); position: relative; }
-        .card-header { margin-bottom: 15px; }
-        .card-header h3 { margin: 0; font-size: 1.4rem; }
-        .card-header span { opacity: 0.6; font-size: 0.9rem; }
-        .card-meta { font-size: 0.85rem; color: #888; margin-top: 5px; font-weight: 500; }
-        .section-label { font-size: 0.75rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-top: 20px; margin-bottom: 5px; }
-        .label-ls { color: #43a047; }
-        .label-rw { color: #43a047; }
-        .label-overall { color: #e67e22; }
-        .text-content { font-size: 0.95rem; line-height: 1.6; margin: 0; white-space: pre-wrap; }
-        .status-badge { font-size: 0.65rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 10px; text-transform: uppercase; }
-        
-        .action-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
-        .action-btn { cursor: pointer; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; transition: 0.2s; font-size: 0.9rem; }
-        .action-btn:hover { background: #eee; }
+        #status-indicator { font-size: 0.65rem; margin-bottom: 15px; display: flex; align-items: center; gap: 6px; font-weight: bold; }
+        #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+        #char-count { font-size: 0.65rem; text-align: right; margin-top: 4px; opacity: 0.6; }
 
-        /* Hide elements during PDF export */
-        .no-export { display: none !important; }
+        .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; box-shadow: 0 2px 10px var(--shadow); }
+        .section-label { font-size: 0.75rem; font-weight: 900; text-transform: uppercase; margin-top: 18px; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .label-ls { color: #43a047; border-bottom: 1px solid #e8f5e9; }
+        .label-rw { color: #43a047; border-bottom: 1px solid #e8f5e9; }
+        .label-overall { color: #e67e22; border-bottom: 1px solid #fff3e0; }
+        .card-text { font-size: 0.95rem; line-height: 1.6; margin: 0; white-space: pre-wrap; }
+        
+        .action-btns { position: absolute; top: 15px; right: 15px; display: flex; gap: 6px; }
+        .action-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 0.9rem; }
     </style>
 </head>
 <body data-theme="light">
 
-<div id="splash-screen">
-    <div class="logo-container">
-        <video id="splash-video" muted playsinline preload="auto">
-            <source src="animation.mp4" type="video/mp4">
-        </video>
-        <h1 class="logo-text">SSAP 2.0</h1>
-        <div class="loading-bar-mini" id="loader"></div>
-        <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none;">Tap to start</button>
-    </div>
-</div>
-    
-<audio id="startup-sound" src="startup.mp3"></audio>
-
 <div class="container">
     <div class="header-box">
-        <h2 style="margin:0; font-weight: 300;">SSAP <span style="color:var(--primary); font-weight: 800;">2.0</span></h2>
+        <h2 style="margin:0">SSAP <span style="color:var(--primary); font-weight: 800;">2.0</span></h2>
         <button class="theme-btn" onclick="toggleTheme()" id="themeText">🌙 Dark Mode</button>
     </div>
 
-    <input type="text" id="searchInput" class="search-input" placeholder="Search name or STI..." oninput="render()">
+    <div id="status-indicator">
+        <span id="status-dot"></span>
+        <span id="status-text">SYSTEM INITIALIZING...</span>
+    </div>
 
     <div class="input-card" id="form-container">
         <form id="studentForm">
             <div class="form-grid">
-                <div><label>Name</label><input type="text" id="name" required></div>
-                <div><label>STI</label><input type="text" id="sti"></div>
-                <div><label>Unit</label><input type="text" id="unit"></div>
-                <div class="full"><label>Course</label><input type="text" id="course"></div>
+                <div><label>Student Name</label><input type="text" id="name" placeholder="e.g. Minh" required></div>
+                <div><label>STI Number</label><input type="text" id="sti" placeholder="011"></div>
+                <div><label>Current Unit</label><input type="text" id="unit" placeholder="Unit 9"></div>
+                <div class="full"><label>Course Name</label><input type="text" id="course" placeholder="English Explorer 2"></div>
                 
-                <div class="full ai-box">
-                    <label style="color: #673ab7;">📋 Raw Notes</label>
-                    <textarea id="dailyLog" rows="3" placeholder="Notes for AI..."></textarea>
-                    <button type="button" class="btn-ai" id="aiBtn" onclick="runAISorter()">✨ Generate Report</button>
+                <div class="full" style="background: rgba(103, 58, 183, 0.04); padding: 15px; border-radius: 8px; border: 1px dashed #673ab7;">
+                    <label style="color: #673ab7;">📋 Paste Daily Progress Notes</label>
+                    <textarea id="dailyLog" rows="6" placeholder="Paste Minh's workbook units and class notes here..."></textarea>
+                    <div id="char-count">0 / 3000 characters</div>
+                    <button type="button" class="btn-ai" id="aiBtn" onclick="runAISorter()">✨ Analyze & Generate Report</button>
                 </div>
 
-                <div class="full"><label>L & S</label><textarea id="ls" rows="3"></textarea></div>
-                <div class="full"><label>R & W</label><textarea id="rw" rows="3"></textarea></div>
-                <div class="full"><label>Summary</label><textarea id="overall" rows="3"></textarea></div>
-
-                <div class="full">
-                    <select id="statusOverride">
-                        <option value="auto">🤖 Auto-Detect</option>
-                        <option value="good">🟢 Excelling</option>
-                        <option value="developing">🟡 Developing</option>
-                        <option value="support">🔴 Support Needed</option>
-                    </select>
-                </div>
+                <div class="full"><label>Listening & Speaking</label><textarea id="ls" rows="3"></textarea></div>
+                <div class="full"><label>Reading & Writing</label><textarea id="rw" rows="4"></textarea></div>
+                <div class="full"><label>Overall Summary</label><textarea id="overall" rows="3"></textarea></div>
             </div>
-            <button type="submit" id="submitBtn" class="btn-add">Save Student Record</button>
+            <button type="submit" id="submitBtn" class="btn-add">Save Record to Database</button>
         </form>
     </div>
 
@@ -141,170 +76,163 @@
 </div>
 
 <script>
-    const GEMINI_API_KEY = "AIzaSyDG5RYfo6gF6o19MkoL2DXjb_xV8LWc27U"; 
-    let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+    const API_KEY = "AIzaSyDG5RYfo6gF6o19MkoL2DXjb_xV8LWc27U"; 
+    let students = JSON.parse(localStorage.getItem('ssap_v2_db')) || [];
     let editIdx = null;
 
-    function hideSplash() {
-        document.getElementById('splash-screen').classList.add('splash-hidden');
-        document.body.classList.add('app-loaded');
+    // Live Status Check
+    async function checkSystem() {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash?key=${API_KEY}`);
+            if (res.ok) { dot.style.background = "#4caf50"; text.innerText = "AI ENGINE ONLINE"; }
+            else { throw new Error(); }
+        } catch (e) { dot.style.background = "#d32f2f"; text.innerText = "CONNECTION ERROR"; }
     }
 
-    window.addEventListener('load', () => {
-        const startBtn = document.getElementById('start-btn');
-        const video = document.getElementById('splash-video');
-        const audio = document.getElementById('startup-sound');
-        document.getElementById('loader').style.display = 'none';
-        startBtn.style.display = 'inline-block';
-        startBtn.addEventListener('click', () => {
-            audio.play(); video.play(); startBtn.style.display = 'none';
-            video.onended = hideSplash; setTimeout(hideSplash, 4000); 
-        });
+    // Real-time Char Counter
+    document.getElementById('dailyLog').addEventListener('input', function() {
+        const len = this.value.length;
+        document.getElementById('char-count').innerText = `${len} / 3000 characters`;
+        if (len > 2500) document.getElementById('char-count').style.color = "red";
+        else document.getElementById('char-count').style.color = "inherit";
     });
 
+    // Bulletproof AI Logic
     async function runAISorter() {
         const log = document.getElementById('dailyLog').value;
-        const sName = document.getElementById('name').value || "Bé";
+        const sName = document.getElementById('name').value || "Học sinh";
         const btn = document.getElementById('aiBtn');
-        if (!log.trim()) return alert("Enter notes first!");
-        btn.disabled = true; btn.innerText = "✍️ AI is writing...";
-        const prompt = `Convert these notes into a professional 3-part student report in Vietnamese for ${sName}. Format as JSON: {"ls": "LS text", "rw": "RW text", "overall": "Summary text"}. Notes: ${log}`;
+
+        if (!log.trim()) return alert("Please paste notes first!");
+        btn.disabled = true; btn.innerText = "⏳ AI IS PROCESSING...";
+
+        // The "Secret Sauce" Prompt - Optimized for Minh's Workbook style notes
+        const prompt = `You are a helpful teacher's assistant. Summarize these lesson notes for ${sName}. 
+        The notes contain a list of workbook units and exercises completed. 
+        Create a professional report in Vietnamese.
+        
+        STRICT RULES:
+        1. Output ONLY a valid JSON object. No intro/outro.
+        2. Categorize all "workbook," "cumulative," and "vocabulary builder" tasks under "rw".
+        3. Mention student focus and participation under "ls".
+        4. Keep the summary in "overall" encouraging.
+        
+        JSON Format:
+        {
+          "ls": "Summary of speaking/interaction",
+          "rw": "List of completed tasks and writing focus",
+          "overall": "General progress summary"
+        }
+        
+        Notes to summarize: ${log}`;
+
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
+            
             const data = await res.json();
-            const cleanJson = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
-            document.getElementById('ls').value = cleanJson.ls;
-            document.getElementById('rw').value = cleanJson.rw;
-            document.getElementById('overall').value = cleanJson.overall;
-        } catch (e) { alert("AI Error: " + e.message); } 
-        finally { btn.disabled = false; btn.innerText = "✨ Generate Report"; }
-    }
+            const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    function getStatus(txt, override) {
-        if (override !== "auto") {
-            const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
-            return { label: map[override][0], color: map[override][1] };
-        }
-        const t = (txt || "").toLowerCase();
-        if (["tốt", "vượt trội", "tiến bộ"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
-        if (["yếu", "chậm", "cần hỗ trợ"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
-        return { label: "Developing", color: "#ffa000" };
-    }
+            if (!responseText) throw new Error("AI Safety Filter triggered. Try removing words like 'Test' or 'Exam' if it fails again.");
 
-    // --- DOWNLOAD AS PDF ---
-    function downloadPDF(index) {
-        const card = document.querySelectorAll('.student-card')[index];
-        const studentName = students[index].name;
-        
-        // Temporarily hide action buttons so they don't appear in PDF
-        const btns = card.querySelector('.action-btns');
-        btns.classList.add('no-export');
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error("JSON Parsing failed.");
+            
+            const cleanData = JSON.parse(jsonMatch[0]);
+            document.getElementById('ls').value = cleanData.ls || "Tham gia bài học tích cực.";
+            document.getElementById('rw').value = cleanData.rw || "";
+            document.getElementById('overall').value = cleanData.overall || "Hoàn thành tốt các bài tập được giao.";
 
-        const opt = {
-            margin: 10,
-            filename: `Report_${studentName}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(card).save().then(() => {
-            btns.classList.remove('no-export');
-        });
-    }
-
-    function editStudent(index) {
-        editIdx = index;
-        const s = students[index];
-        document.getElementById('name').value = s.name;
-        document.getElementById('sti').value = s.sti;
-        document.getElementById('unit').value = s.unit;
-        document.getElementById('course').value = s.course;
-        document.getElementById('dailyLog').value = s.dailyLog || "";
-        document.getElementById('ls').value = s.ls;
-        document.getElementById('rw').value = s.rw;
-        document.getElementById('overall').value = s.overall;
-        document.getElementById('statusOverride').value = s.statusOverride || "auto";
-        document.getElementById('submitBtn').innerText = "Update Student Record";
-        document.getElementById('submitBtn').style.background = "#673ab7";
-        document.getElementById('form-container').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function deleteStudent(index) {
-        if (confirm("Delete this record?")) {
-            students.splice(index, 1);
-            localStorage.setItem('stu_final_v2', JSON.stringify(students));
-            render();
+        } catch (e) {
+            alert("⚠️ SYSTEM ALERT: " + e.message);
+        } finally {
+            btn.disabled = false; btn.innerText = "✨ Analyze & Generate Report";
         }
     }
 
-    function render() {
-        const list = document.getElementById('studentList');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = '';
-        students.forEach((s, i) => {
-            if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
-            const status = getStatus(s.overall, s.statusOverride || "auto");
-            list.innerHTML += `
-                <div class="student-card">
-                    <div class="action-btns">
-                        <button class="action-btn" onclick="downloadPDF(${i})" title="Download PDF">📥</button>
-                        <button class="action-btn" onclick="editStudent(${i})" title="Edit">✏️</button>
-                        <button class="action-btn" onclick="deleteStudent(${i})" title="Delete">🗑️</button>
-                    </div>
-                    <div class="card-header">
-                        <h3>${s.name} <span>#${s.sti || 'N/A'}</span></h3>
-                        <div class="card-meta">${s.course || 'No Course'} • Unit ${s.unit || 'N/A'}</div>
-                    </div>
-                    
-                    <div class="section-label label-ls">LISTENING & SPEAKING</div>
-                    <div class="text-content">Listening & Speaking (Nghe & Nói):\n${s.ls}</div>
-
-                    <div class="section-label label-rw">READING & WRITING</div>
-                    <div class="text-content">Reading & Writing (Đọc & Viết):\n${s.rw}</div>
-
-                    <div class="section-label label-overall">OVERALL</div>
-                    <div class="text-content">Overall (Tổng quan):\n${s.overall}</div>
-
-                    <div class="status-badge" style="background:${status.color}">${status.label}</div>
-                </div>`;
-        });
-    }
-
+    // Save & Edit Logic
     document.getElementById('studentForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const data = {
             name: document.getElementById('name').value, sti: document.getElementById('sti').value,
             unit: document.getElementById('unit').value, course: document.getElementById('course').value,
             ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
-            overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value,
-            dailyLog: document.getElementById('dailyLog').value
+            overall: document.getElementById('overall').value, dailyLog: document.getElementById('dailyLog').value
         };
 
-        if (editIdx !== null) {
-            students[editIdx] = data;
-            editIdx = null;
-            document.getElementById('submitBtn').innerText = "Save Student Record";
-            document.getElementById('submitBtn').style.background = "var(--primary)";
-        } else {
-            students.unshift(data);
-        }
+        if (editIdx !== null) { students[editIdx] = data; editIdx = null; } 
+        else { students.unshift(data); }
 
-        localStorage.setItem('stu_final_v2', JSON.stringify(students));
+        localStorage.setItem('ssap_v2_db', JSON.stringify(students));
         e.target.reset(); render();
+        document.getElementById('submitBtn').innerText = "Save Record to Database";
+        document.getElementById('submitBtn').style.background = "var(--primary)";
     });
+
+    function render() {
+        const list = document.getElementById('studentList');
+        list.innerHTML = '';
+        students.forEach((s, i) => {
+            list.innerHTML += `
+                <div class="student-card">
+                    <div class="action-btns">
+                        <button class="action-btn" onclick="downloadPDF(${i})">📥 PDF</button>
+                        <button class="action-btn" onclick="editS(${i})">✏️</button>
+                        <button class="action-btn" onclick="delS(${i})">🗑️</button>
+                    </div>
+                    <h3 style="margin:0">${s.name} <span style="font-weight:300; opacity:0.6">#${s.sti || 'N/A'}</span></h3>
+                    <div style="font-size:0.8rem; margin-bottom:15px; color:#666">${s.course || 'English Course'} • Unit ${s.unit || 'N/A'}</div>
+                    
+                    <div class="section-label label-ls">Listening & Speaking (Nghe & Nói)</div>
+                    <p class="card-text">${s.ls}</p>
+                    
+                    <div class="section-label label-rw">Reading & Writing (Đọc & Viết)</div>
+                    <p class="card-text">${s.rw}</p>
+                    
+                    <div class="section-label label-overall">Overall (Tổng quan)</div>
+                    <p class="card-text">${s.overall}</p>
+                </div>`;
+        });
+    }
+
+    function editS(i) {
+        editIdx = i; const s = students[i];
+        document.getElementById('name').value = s.name;
+        document.getElementById('sti').value = s.sti;
+        document.getElementById('unit').value = s.unit;
+        document.getElementById('course').value = s.course;
+        document.getElementById('ls').value = s.ls;
+        document.getElementById('rw').value = s.rw;
+        document.getElementById('overall').value = s.overall;
+        document.getElementById('dailyLog').value = s.dailyLog || "";
+        document.getElementById('submitBtn').innerText = "Update Record Content";
+        document.getElementById('submitBtn').style.background = "#673ab7";
+        document.getElementById('form-container').scrollIntoView({behavior:'smooth'});
+    }
+
+    function delS(i) { if(confirm("Delete this record permanently?")) { students.splice(i,1); localStorage.setItem('ssap_v2_db', JSON.stringify(students)); render(); } }
+    
+    function downloadPDF(index) {
+        const card = document.querySelectorAll('.student-card')[index];
+        const btns = card.querySelector('.action-btns');
+        btns.style.display = 'none';
+        const opt = { margin: 10, filename: `Report_${students[index].name}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(opt).from(card).save().then(() => { btns.style.display = 'flex'; });
+    }
 
     function toggleTheme() {
         const b = document.body;
-        const isLight = b.getAttribute('data-theme') === 'light';
-        b.setAttribute('data-theme', isLight ? 'dark' : 'light');
-        document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
+        const isL = b.getAttribute('data-theme') === 'light';
+        b.setAttribute('data-theme', isL ? 'dark' : 'light');
+        document.getElementById('themeText').innerText = isL ? "☀️ Light Mode" : "🌙 Dark Mode";
     }
 
+    checkSystem();
     render();
 </script>
 </body>
