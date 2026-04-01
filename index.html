@@ -78,15 +78,31 @@
 </head>
 <body data-theme="light">
 
-    <div id="splash-screen">
-        <div class="logo-container">
-            <video id="splash-video" autoplay muted playsinline preload="auto">
-                <source src="animation.mp4" type="video/mp4">
-            </video>
-            <h1 class="logo-text">SSAP 2.0</h1>
-            <div class="loading-bar-mini"></div>
-        </div>
+<div id="splash-screen">
+    <div class="logo-container">
+        <video id="splash-video" muted playsinline preload="auto">
+            <source src="animation.mp4" type="video/mp4">
+        </video>
+        <h1 class="logo-text">SSAP 2.0</h1>
+        <div class="loading-bar-mini" id="loader"></div>
+        
+        <button id="start-btn" style="
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px 30px; 
+            border-radius: 30px; 
+            font-weight: bold; 
+            letter-spacing: 2px; 
+            cursor: pointer; 
+            margin-top: 20px;
+            display: none; 
+            transition: 0.3s;
+            box-shadow: 0 0 15px var(--primary);">
+            Tap to start
+        </button>
     </div>
+</div>
     
     <audio id="startup-sound" src="startup.mp3"></audio>
 
@@ -146,21 +162,31 @@
         }
     }
 
-    window.addEventListener('load', () => {
-        const video = document.getElementById('splash-video');
-        const audio = document.getElementById('startup-sound');
-        
-        // Start playback
-        video.play().catch(() => console.log("Video needs interaction"));
-        audio.play().catch(() => console.log("Audio needs interaction"));
+window.addEventListener('load', () => {
+    const startBtn = document.getElementById('start-btn');
+    const loader = document.getElementById('loader');
+    const video = document.getElementById('splash-video');
+    const audio = document.getElementById('startup-sound');
 
-        // FAIL-SAFE: If video doesn't end or fails, hide splash after 5 seconds anyway
-        setTimeout(hideSplash, 5000); 
+    // Show the button once the page resources are ready
+    loader.style.display = 'none';
+    startBtn.style.display = 'inline-block';
 
-        // Or hide exactly when video finishes (if loop is NOT used)
+    startBtn.addEventListener('click', () => {
+        // 1. Play the audio and video
+        audio.play().catch(e => console.log("Audio play failed", e));
+        video.play().catch(e => console.log("Video play failed", e));
+
+        // 2. Hide the button so it doesn't overlap the animation
+        startBtn.style.opacity = '0';
+
+        // 3. Set the transition to the main app
+        // If the video ends, hide the splash. 
+        // Fail-safe: hide after 4 seconds if video doesn't trigger 'onended'
         video.onended = hideSplash;
+        setTimeout(hideSplash, 4000); 
     });
-
+});
     // --- APP CORE ---
     async function runAISorter() {
         const log = document.getElementById('dailyLog').value;
