@@ -18,7 +18,7 @@
             --text: #2c3e50;
             --border: #eeeeee;
             --shadow: rgba(0,0,0,0.08);
-            --splash-bg: #1a1a1a; /* Dark background for splash */
+            --splash-bg: #1a1a1a; 
         }
 
         [data-theme="dark"] {
@@ -40,7 +40,14 @@
             z-index: 9999;
             transition: opacity 1s ease-out, visibility 1s;
         }
-        #splash-video { max-width: 300px; height: auto; }
+        #splash-video { 
+            max-width: 300px; 
+            height: auto; 
+            outline: none;
+        }
+        /* Hides play buttons on mobile */
+        video::-webkit-media-controls { display:none !important; }
+        
         .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
         /* --- MAIN INTERFACE --- */
@@ -76,7 +83,7 @@
 <body data-theme="light">
 
     <div id="splash-screen">
-        <video id="splash-video" width="300" autoplay muted playsinline>
+        <video id="splash-video" width="300" autoplay muted loop playsinline preload="auto">
             <source src="animation.mp4" type="video/mp4">
         </video>
         <p style="color: white; font-size: 0.8rem; letter-spacing: 3px; margin-top: 20px; opacity: 0.6;">SSAP 2.0</p>
@@ -139,15 +146,21 @@
         const splash = document.getElementById('splash-screen');
         const video = document.getElementById('splash-video');
 
-        // Play video immediately
-        video.play().catch(() => console.log("Video autoplay blocked"));
+        // Force play logic
+        video.muted = true;
+        const playPromise = video.play();
+
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Autoplay prevented, clicking would normally be required.");
+            });
+        }
 
         // Wait 5 seconds, then fade out
         setTimeout(() => {
             splash.classList.add('splash-hidden');
             document.body.classList.add('app-loaded');
             
-            // Remove splash from DOM after transition to save memory
             setTimeout(() => {
                 splash.remove();
                 video.pause();
