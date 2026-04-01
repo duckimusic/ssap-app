@@ -164,14 +164,61 @@
 </div>
 
 <script>
-    let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
-    let dailyLogs = JSON.parse(localStorage.getItem('stu_daily')) || [];
-    let bonusLogs = JSON.parse(localStorage.getItem('stu_bonus')) || [];
+    // --- GLOBAL DATA ---
+    // We wrap everything in one object to make Cloudflare KV happy
+    let appData = { 
+        students: [], 
+        daily: [], 
+        bonus: [] 
+    };
+
     let editIdx = null;
     let duckCount = 0;
     let isAdmin = false;
 
-    // --- SPLASH & AUDIO ---
+    // --- CLOUD SYNC LOGIC ---
+    async function syncCloud(method, data = null) {
+        const options = { 
+            method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (data) options.body = JSON.stringify(data);
+        
+        const res = await fetch('/api/data', options);
+        return method === 'GET' ? await res.json() : null;
+    }
+
+    async function initApp() {
+        try {
+            const cloudData = await syncCloud('GET');
+            // Use cloud data if it exists; otherwise, fallback to localStorage for the very first migration
+            if (cloudData && cloudData.students) {
+                appData = cloudData;
+            } else {
+                appData.students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+                appData.daily = JSON.parse(localStorage.getItem('stu_daily')) || [];
+                appData.bonus = JSON.parse(localStorage.getItem('stu_bonus')) || [];
+            }
+            renderAll();
+        } catch (e) {
+            console.error("Cloud Sync Failed. Working offline.", e);
+            // Fallback for offline use
+            appData.students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+            appData.daily = JSON.parse(localStorage.getItem('stu_daily')) || [];
+            appData.bonus = JSON.parse(localStorage.getItem('stu_bonus')) || [];
+            renderAll();
+        }
+    }
+
+    async function triggerSave() {
+        await syncCloud('POST', appData);
+        // Also keep a local backup just in case!
+        localStorage.setItem('stu_final_v2', JSON.stringify(appData.students));
+        localStorage.setItem('stu_daily', JSON.stringify(appData.daily));
+        localStorage.setItem('stu_bonus', JSON.stringify(appData.bonus));
+    }
+
+    // --- SPLASH & STARTUP ---
     function hideSplash() {
         document.getElementById('splash-screen').classList.add('splash-hidden');
         document.body.classList.add('app-loaded');
@@ -183,10 +230,14 @@
         const audio = document.getElementById('startup-sound');
         document.getElementById('loader').style.display = 'none';
         startBtn.style.display = 'inline-block';
+        
         startBtn.addEventListener('click', () => {
-            audio.play().catch(e => console.log("Audio block")); video.play().catch(e => console.log("Video block"));
+            audio.play().catch(e => console.log("Audio block")); 
+            video.play().catch(e => console.log("Video block"));
             startBtn.style.display = 'none';
-            video.onended = hideSplash; setTimeout(hideSplash, 4000); 
+            video.onended = hideSplash; 
+            setTimeout(hideSplash, 4000); 
+            initApp(); // Load cloud data after splash
         });
     });
 
@@ -200,7 +251,7 @@
     }
 
     // --- LOGIC: DAILY ---
-    document.getElementById('dailyForm').addEventListener('submit', (e) => {
+    document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const entry = {
             name: document.getElementById('d-name').value,
@@ -209,9 +260,10 @@
             xp: parseInt(document.getElementById('d-xp').value),
             notes: document.getElementById('d-notes').value
         };
-        dailyLogs.unshift(entry);
-        localStorage.setItem('stu_daily', JSON.stringify(dailyLogs));
-        e.target.reset(); renderDaily();
+        appData.daily.unshift(entry);
+        await triggerSave(); 
+        e.target.reset(); 
+        renderDaily();
     });
 
     function renderDaily() {
@@ -219,13 +271,12 @@
         const search = document.getElementById('searchDaily').value.toLowerCase();
         list.innerHTML = '';
         
-        // Update Leaderboard
         const totals = {};
-        dailyLogs.forEach(l => totals[l.name] = (totals[l.name] || 0) + l.xp);
+        appData.daily.forEach(l => totals[l.name] = (totals[l.name] || 0) + l.xp);
         const top = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,3);
         document.getElementById('xpLeaderboard').innerHTML = "🏆 Leaderboard: " + top.map(t => `${t[0]} (${t[1]} XP)`).join(" | ");
 
-        dailyLogs.forEach((l, i) => {
+        appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
             list.innerHTML += `
                 <div class="student-card">
@@ -249,7 +300,7 @@
         return { label: "Developing", color: "#ffa000" };
     }
 
-    document.getElementById('studentForm').addEventListener('submit', (e) => {
+    document.getElementById('studentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = {
             name: document.getElementById('name').value, sti: document.getElementById('sti').value,
@@ -257,51 +308,58 @@
             ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
             overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value
         };
-        if (editIdx !== null) { students[editIdx] = data; editIdx = null; } 
-        else { students.unshift(data); }
-        localStorage.setItem('stu_final_v2', JSON.stringify(students));
-        e.target.reset(); renderMonthly();
+        if (editIdx !== null) { appData.students[editIdx] = data; editIdx = null; } 
+        else { appData.students.unshift(data); }
+        
+        await triggerSave();
+        e.target.reset(); 
+        renderMonthly();
     });
 
-function renderMonthly() {
-    const list = document.getElementById('studentList');
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    list.innerHTML = '';
-    
-    students.forEach((s, i) => {
-        if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
+    function renderMonthly() {
+        const list = document.getElementById('studentList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        list.innerHTML = '';
         
-        const status = getStatus(s.overall, s.statusOverride || "auto");
-        
-        list.innerHTML += `
-            <div class="student-card">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                    <div class="student-info">
-                        <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800;">${s.name} <span style="font-weight: 300; opacity: 0.5; font-size: 1.1rem;">#${s.sti || '000'}</span></h3>
-                        <div style="font-size: 0.85rem; opacity: 0.6; margin-top: 2px; font-weight: 500;">${s.course || 'General'} • Unit ${s.unit || '0'}</div>
+        appData.students.forEach((s, i) => {
+            if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
+            const status = getStatus(s.overall, s.statusOverride || "auto");
+            list.innerHTML += `
+                <div class="student-card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                        <div class="student-info">
+                            <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800;">${s.name} <span style="font-weight: 300; opacity: 0.5; font-size: 1.1rem;">#${s.sti || '000'}</span></h3>
+                            <div style="font-size: 0.85rem; opacity: 0.6; margin-top: 2px; font-weight: 500;">${s.course || 'General'} • Unit ${s.unit || '0'}</div>
+                        </div>
+                        <div class="action-btns no-print" style="position: static; display: flex; gap: 15px; opacity: 0.5;">
+                            <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
+                            <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
+                        </div>
                     </div>
-                    <div class="action-btns no-print" style="position: static; display: flex; gap: 15px; opacity: 0.5;">
-                        <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
-                        <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
-                    </div>
-                </div>
-                
-                <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; margin-top: 18px; margin-bottom: 4px; color: #4caf50;">LISTENING & SPEAKING</div>
-                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Listening & Speaking (Nghe & Nói):</div>
-                <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.ls || 'N/A'}</div>
+                    <div class="section-label">Listening & Speaking</div>
+                    <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.ls || 'N/A'}</div>
+                    <div class="section-label">Reading & Writing</div>
+                    <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.rw || 'N/A'}</div>
+                    <div class="section-label">Overall</div>
+                    <div style="font-size: 0.9rem; white-space: pre-wrap;">${s.overall || 'N/A'}</div>
+                    <div class="status-badge" style="background:${status.color}">${status.label}</div>
+                </div>`;
+        });
+    }
 
-                <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; margin-top: 18px; margin-bottom: 4px; color: #4caf50;">READING & WRITING</div>
-                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Reading & Writing (Đọc & Viết):</div>
-                <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.rw || 'N/A'}</div>
-
-                <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; margin-top: 18px; margin-bottom: 4px; color: #f39c12;">OVERALL</div>
-                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Overall (Tổng quan):</div>
-                <div style="font-size: 0.9rem; white-space: pre-wrap;">${s.overall || 'N/A'}</div>
-
-                <div class="status-badge" style="background:${status.color}; margin-top: 15px; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">${status.label}</div>
-            </div>`;
-    });
-}
+    function editStudent(i) {
+        const s = appData.students[i];
+        document.getElementById('name').value = s.name;
+        document.getElementById('sti').value = s.sti;
+        document.getElementById('unit').value = s.unit;
+        document.getElementById('course').value = s.course;
+        document.getElementById('ls').value = s.ls;
+        document.getElementById('rw').value = s.rw;
+        document.getElementById('overall').value = s.overall;
+        document.getElementById('statusOverride').value = s.statusOverride || "auto";
+        editIdx = i;
+        window.scrollTo(0, 0);
+    }
 
     // --- LOGIC: BONUS ---
     function duckSecret() {
@@ -313,17 +371,17 @@ function renderMonthly() {
         }
     }
 
-    document.getElementById('bonusForm').addEventListener('submit', (e) => {
+    document.getElementById('bonusForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        bonusLogs.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
-        localStorage.setItem('stu_bonus', JSON.stringify(bonusLogs));
+        appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
+        await triggerSave();
         e.target.reset(); renderBonus();
     });
 
     function renderBonus() {
         const list = document.getElementById('bonusList');
         list.innerHTML = '';
-        bonusLogs.forEach((b, i) => {
+        appData.bonus.forEach((b, i) => {
             list.innerHTML += `
                 <div class="comment-card">
                     ${isAdmin ? `<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>` : ''}
@@ -334,20 +392,13 @@ function renderMonthly() {
     }
 
     // --- HELPERS ---
-    function deleteItem(type, i) {
+    async function deleteItem(type, i) {
         if(!confirm("Delete?")) return;
-        if(type === 'daily') dailyLogs.splice(i, 1);
-        if(type === 'monthly') students.splice(i, 1);
-        if(type === 'bonus') bonusLogs.splice(i, 1);
-        localStorage.setItem('stu_daily', JSON.stringify(dailyLogs));
-        localStorage.setItem('stu_final_v2', JSON.stringify(students));
-        localStorage.setItem('stu_bonus', JSON.stringify(bonusLogs));
+        if(type === 'daily') appData.daily.splice(i, 1);
+        if(type === 'monthly') appData.students.splice(i, 1);
+        if(type === 'bonus') appData.bonus.splice(i, 1);
+        await triggerSave();
         renderAll();
-    }
-
-    function downloadPDF(index) {
-        const card = document.querySelectorAll('.student-card')[index];
-        html2pdf().from(card).save(`Report_${students[index].name}.pdf`);
     }
 
     function toggleTheme() {
@@ -359,7 +410,6 @@ function renderMonthly() {
 
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
-    renderAll();
 </script>
 </body>
 </html>
