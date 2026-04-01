@@ -263,26 +263,45 @@
         e.target.reset(); renderMonthly();
     });
 
-    function renderMonthly() {
-        const list = document.getElementById('studentList');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = '';
-        students.forEach((s, i) => {
-            if (!s.name.toLowerCase().includes(search)) return;
-            const status = getStatus(s.overall, s.statusOverride || "auto");
-            list.innerHTML += `
-                <div class="student-card">
-                    <div class="action-btns">
-                        <button onclick="downloadPDF(${i})">📥</button>
-                        <button onclick="deleteItem('monthly', ${i})">🗑️</button>
+function renderMonthly() {
+    const list = document.getElementById('studentList');
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    list.innerHTML = '';
+    
+    students.forEach((s, i) => {
+        if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
+        
+        const status = getStatus(s.overall, s.statusOverride || "auto");
+        
+        list.innerHTML += `
+            <div class="student-card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <div class="student-info">
+                        <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800;">${s.name} <span style="font-weight: 300; opacity: 0.5; font-size: 1.1rem;">#${s.sti || '000'}</span></h3>
+                        <div style="font-size: 0.85rem; opacity: 0.6; margin-top: 2px; font-weight: 500;">${s.course || 'General'} • Unit ${s.unit || '0'}</div>
                     </div>
-                    <h3>${s.name} <span style="opacity:0.5; font-size:0.8rem;">#${s.sti}</span></h3>
-                    <div class="section-label">Overall Summary</div>
-                    <div style="font-size:0.9rem">${s.overall}</div>
-                    <div class="status-badge" style="background:${status.color}">${status.label}</div>
-                </div>`;
-        });
-    }
+                    <div class="action-btns no-print" style="position: static; display: flex; gap: 15px; opacity: 0.5;">
+                        <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
+                        <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
+                    </div>
+                </div>
+                
+                <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; margin-top: 18px; margin-bottom: 4px; color: #4caf50;">LISTENING & SPEAKING</div>
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Listening & Speaking (Nghe & Nói):</div>
+                <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.ls || 'N/A'}</div>
+
+                <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; margin-top: 18px; margin-bottom: 4px; color: #4caf50;">READING & WRITING</div>
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Reading & Writing (Đọc & Viết):</div>
+                <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.rw || 'N/A'}</div>
+
+                <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; margin-top: 18px; margin-bottom: 4px; color: #f39c12;">OVERALL</div>
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Overall (Tổng quan):</div>
+                <div style="font-size: 0.9rem; white-space: pre-wrap;">${s.overall || 'N/A'}</div>
+
+                <div class="status-badge" style="background:${status.color}; margin-top: 15px; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">${status.label}</div>
+            </div>`;
+    });
+}
 
     // --- LOGIC: BONUS ---
     function duckSecret() {
