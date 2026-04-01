@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSAP 2.0 | AI Educator Assistant</title>
+    <meta name="theme-color" content="#000000">
     <style>
         :root {
             --primary: #2e7d32;
@@ -13,7 +14,7 @@
             --text: #2c3e50;
             --border: #eeeeee;
             --shadow: rgba(0,0,0,0.08);
-            --splash-bg: #1a1a1a;
+            --splash-bg: #000000;
         }
 
         [data-theme="dark"] {
@@ -33,14 +34,26 @@
             background: var(--splash-bg);
             display: flex; justify-content: center; align-items: center;
             z-index: 9999;
-            transition: opacity 1s ease-out, visibility 1s;
+            transition: opacity 0.8s ease-out, visibility 0.8s;
             color: white; text-align: center;
         }
-        .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1.5s forwards; letter-spacing: 4px; }
-        .logo-icon { font-size: 4rem; font-weight: 900; margin-bottom: 10px; text-shadow: 2px 0 #ff4b2b, -2px 0 #00d2ff; }
-        .logo-text { font-size: 2rem; font-weight: 200; text-transform: uppercase; margin: 0; }
+
+        #splash-video {
+            width: 300px; 
+            max-width: 85%;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px auto;
+        }
+
+        .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; }
+        .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; text-shadow: 0 0 20px rgba(103, 58, 183, 0.4); }
+        .loading-bar-mini { width: 100px; height: 2px; background: #333; margin: 20px auto; position: relative; overflow: hidden; }
+        .loading-bar-mini::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: loading 2s infinite; }
+        
+        @keyframes loading { to { left: 100%; } }
         @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-        .splash-hidden { opacity: 0; visibility: hidden; }
+        .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
         /* --- MAIN INTERFACE --- */
         .container { max-width: 900px; margin: 0 auto; padding: 20px; opacity: 0; transition: opacity 1s ease-in; }
@@ -48,41 +61,33 @@
 
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .theme-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-
-        .search-input { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); color: var(--text); margin-bottom: 20px; box-shadow: 0 2px 5px var(--shadow); }
-
+        .search-input { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); color: var(--text); margin-bottom: 20px; box-shadow: 0 2px 5px var(--shadow); box-sizing: border-box; }
         .input-card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px var(--shadow); border: 1px solid var(--border); margin-bottom: 30px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.75rem; color: var(--primary); text-transform: uppercase; }
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; font-size: 0.95rem; }
-        
         .ai-box { background: rgba(103, 58, 183, 0.04); border: 1px dashed #673ab7; padding: 15px; border-radius: 8px; margin-top: 10px; }
         .btn-ai { background: #673ab7; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.2s; }
-        .btn-ai:hover { background: #5e35b1; }
-        .btn-ai:disabled { background: #ccc; cursor: not-allowed; }
-
         .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; font-size: 1rem; }
-
         .student-card { background: var(--card); border-radius: 10px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--border); position: relative; }
-        .card-tools { display: flex; gap: 10px; position: absolute; right: 20px; top: 20px; }
-        .tool-btn { background: none; border: none; cursor: pointer; font-size: 1.1rem; opacity: 0.5; color: var(--text); }
-        .tool-btn:hover { opacity: 1; }
-
+        .status-badge { font-size: 0.65rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 5px; text-transform: uppercase; }
         .section-label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-top: 15px; border-bottom: 1px solid var(--border); padding-bottom: 2px; }
         .text-content { font-size: 0.9rem; line-height: 1.6; margin: 8px 0; white-space: pre-wrap; }
-        .status-badge { font-size: 0.65rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body data-theme="light">
 
     <div id="splash-screen">
         <div class="logo-container">
-            <div class="logo-icon">S S</div>
+            <video id="splash-video" autoplay muted playsinline preload="auto">
+                <source src="animation.mp4" type="video/mp4">
+            </video>
             <h1 class="logo-text">SSAP 2.0</h1>
-            <p style="font-size: 0.7rem; opacity: 0.5; margin-top: 10px;">GENERATING INTELLIGENCE...</p>
+            <div class="loading-bar-mini"></div>
         </div>
     </div>
+    
     <audio id="startup-sound" src="startup.mp3"></audio>
 
     <div class="container">
@@ -91,28 +96,27 @@
             <button class="theme-btn" onclick="toggleTheme()" id="themeText">🌙 Dark Mode</button>
         </div>
 
-        <input type="text" id="searchInput" class="search-input" placeholder="Quick search name or STI..." oninput="render()">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search name or STI..." oninput="render()">
 
         <div class="input-card">
             <form id="studentForm">
                 <div class="form-grid">
-                    <div><label>Name</label><input type="text" id="name" required placeholder="Ex: Minh (Tom)"></div>
-                    <div><label>STI</label><input type="text" id="sti" placeholder="018"></div>
-                    <div><label>Unit</label><input type="text" id="unit" placeholder="Unit 9"></div>
-                    <div class="full"><label>Course</label><input type="text" id="course" placeholder="Family and Friends 2"></div>
+                    <div><label>Name</label><input type="text" id="name" required></div>
+                    <div><label>STI</label><input type="text" id="sti"></div>
+                    <div><label>Unit</label><input type="text" id="unit"></div>
+                    <div class="full"><label>Course</label><input type="text" id="course"></div>
                     
                     <div class="full ai-box">
-                        <label style="color: #673ab7;">📋 Raw Lesson Notes (AI will rewrite these)</label>
-                        <textarea id="dailyLog" rows="3" placeholder="Minh did U9 well. Speaking loud but needs fix pronunciation. Homework finished..."></textarea>
-                        <button type="button" class="btn-ai" id="aiBtn" onclick="runAISorter()">✨ Generate Professional Report</button>
+                        <label style="color: #673ab7;">📋 Raw Notes</label>
+                        <textarea id="dailyLog" rows="3" placeholder="Notes for AI..."></textarea>
+                        <button type="button" class="btn-ai" id="aiBtn" onclick="runAISorter()">✨ Generate Report</button>
                     </div>
 
                     <div class="full"><label>L & S</label><textarea id="ls" rows="3"></textarea></div>
                     <div class="full"><label>R & W</label><textarea id="rw" rows="3"></textarea></div>
-                    <div class="full"><label>Overall Summary</label><textarea id="overall" rows="3"></textarea></div>
+                    <div class="full"><label>Summary</label><textarea id="overall" rows="3"></textarea></div>
 
                     <div class="full">
-                        <label>Manual Status</label>
                         <select id="statusOverride">
                             <option value="auto">🤖 Auto-Detect</option>
                             <option value="good">🟢 Excelling</option>
@@ -129,43 +133,42 @@
     </div>
 
 <script>
-    // --- 1. CONFIGURATION ---
-    const GEMINI_API_KEY = "PASTE_YOUR_API_KEY_HERE"; // Replace this!
+    const GEMINI_API_KEY = "AIzaSyDG5RYfo6gF6o19MkoL2DXjb_xV8LWc27U"; 
     let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
     let editIdx = null;
 
-    // --- 2. SPLASH SCREEN LOGIC ---
-    window.addEventListener('load', () => {
+    // --- ENHANCED SPLASH LOGIC ---
+    function hideSplash() {
         const splash = document.getElementById('splash-screen');
-        const audio = document.getElementById('startup-sound');
-        
-        audio.play().catch(() => console.log("Sound autoplay blocked"));
-
-        setTimeout(() => {
+        if (!splash.classList.contains('splash-hidden')) {
             splash.classList.add('splash-hidden');
             document.body.classList.add('app-loaded');
-        }, 5000); // 5 Seconds
+        }
+    }
+
+    window.addEventListener('load', () => {
+        const video = document.getElementById('splash-video');
+        const audio = document.getElementById('startup-sound');
+        
+        // Start playback
+        video.play().catch(() => console.log("Video needs interaction"));
+        audio.play().catch(() => console.log("Audio needs interaction"));
+
+        // FAIL-SAFE: If video doesn't end or fails, hide splash after 5 seconds anyway
+        setTimeout(hideSplash, 5000); 
+
+        // Or hide exactly when video finishes (if loop is NOT used)
+        video.onended = hideSplash;
     });
 
-    // --- 3. AI GENERATION LOGIC ---
+    // --- APP CORE ---
     async function runAISorter() {
         const log = document.getElementById('dailyLog').value;
         const sName = document.getElementById('name').value || "Bé";
         const btn = document.getElementById('aiBtn');
-
-        if (!log) return alert("Enter notes first!");
-        if (GEMINI_API_KEY === "PASTE_YOUR_API_KEY_HERE") return alert("Add API Key to code!");
-
-        btn.disabled = true;
-        btn.innerText = "✍️ AI is writing report...";
-
-        const prompt = `
-            Convert these notes into a professional 3-part student report in Vietnamese for ${sName}.
-            Style: Academic, professional, encouraging (like Family and Friends curriculum).
-            Notes: ${log}
-            Format as JSON: {"ls": "LS text", "rw": "RW text", "overall": "Summary text"}
-        `;
-
+        if (!log || GEMINI_API_KEY.includes("AIzaSyDG5RYfo6gF6o19MkoL2DXjb_xV8LWc27U")) return alert("Check Notes/API Key");
+        btn.disabled = true; btn.innerText = "✍️ AI is writing...";
+        const prompt = `Convert these notes into a professional 3-part student report in Vietnamese for ${sName}. Format as JSON: {"ls": "LS text", "rw": "RW text", "overall": "Summary text"}. Notes: ${log}`;
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                 method: 'POST',
@@ -174,27 +177,21 @@
             });
             const data = await res.json();
             const cleanJson = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
-
             document.getElementById('ls').value = cleanJson.ls;
             document.getElementById('rw').value = cleanJson.rw;
             document.getElementById('overall').value = cleanJson.overall;
-        } catch (e) {
-            alert("AI Error. Check key/internet.");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "✨ Generate Professional Report";
-        }
+        } catch (e) { alert("AI Error"); } 
+        finally { btn.disabled = false; btn.innerText = "✨ Generate Report"; }
     }
 
-    // --- 4. CORE APP FUNCTIONS ---
     function getStatus(txt, override) {
         if (override !== "auto") {
             const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
             return { label: map[override][0], color: map[override][1] };
         }
         const t = (txt || "").toLowerCase();
-        if (["tốt", "vượt trội", "nổi bật"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
-        if (["yếu", "chậm", "cố gắng", "khó khăn"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
+        if (["tốt", "vượt trội"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
+        if (["yếu", "chậm"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
         return { label: "Developing", color: "#ffa000" };
     }
 
@@ -202,23 +199,13 @@
         const list = document.getElementById('studentList');
         const search = document.getElementById('searchInput').value.toLowerCase();
         list.innerHTML = '';
-        
-        students.filter(s => s.name.toLowerCase().includes(search) || (s.sti && s.sti.includes(search))).forEach((s, i) => {
+        students.filter(s => s.name.toLowerCase().includes(search)).forEach((s, i) => {
             const status = getStatus(s.overall, s.statusOverride || "auto");
             list.innerHTML += `
                 <div class="student-card" style="border-top: 4px solid ${status.color}">
-                    <div class="card-tools">
-                        <button class="tool-btn" onclick="copyReport(${i})">📋</button>
-                        <button class="tool-btn" onclick="editStudent(${i})">✏️</button>
-                        <button class="tool-btn" onclick="deleteStudent(${i})">🗑️</button>
-                    </div>
                     <h3 style="margin:0">${s.name} <small>#${s.sti || ''}</small></h3>
-                    <p style="font-size:0.8rem; margin:5px 0;">${s.course} • ${s.unit}</p>
                     <div class="status-badge" style="background:${status.color}">${status.label}</div>
-                    
-                    <div class="section-label">Listening & Speaking</div><div class="text-content">${s.ls}</div>
-                    <div class="section-label">Reading & Writing</div><div class="text-content">${s.rw}</div>
-                    <div class="section-label" style="color:#673ab7">Summary</div><div class="text-content">${s.overall}</div>
+                    <div class="section-label">Summary</div><div class="text-content">${s.overall}</div>
                 </div>`;
         });
     }
@@ -227,36 +214,20 @@
         e.preventDefault();
         const data = {
             name: document.getElementById('name').value, sti: document.getElementById('sti').value,
-            unit: document.getElementById('unit').value, course: document.getElementById('course').value,
             ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
             overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value,
             dailyLog: document.getElementById('dailyLog').value
         };
-        if(editIdx !== null) students[editIdx] = data; else students.unshift(data);
+        students.unshift(data);
         localStorage.setItem('stu_final_v2', JSON.stringify(students));
-        e.target.reset(); editIdx = null; render();
+        e.target.reset(); render();
     });
-
-    function deleteStudent(i) { if(confirm('Delete?')) { students.splice(i, 1); localStorage.setItem('stu_final_v2', JSON.stringify(students)); render(); } }
-    
-    function editStudent(i) {
-        const s = students[i];
-        ["name", "sti", "unit", "course", "ls", "rw", "overall", "dailyLog"].forEach(id => document.getElementById(id).value = s[id] || "");
-        editIdx = i; document.getElementById('submitBtn').innerText = "Update Record";
-        window.scrollTo({top:0, behavior:'smooth'});
-    }
-
-    function copyReport(i) {
-        const s = students[i];
-        const report = `BÁO CÁO: ${s.name}\n${s.course}\n\nL&S: ${s.ls}\n\nR&W: ${s.rw}\n\nTổng quan: ${s.overall}`;
-        navigator.clipboard.writeText(report).then(() => alert("Copied for Zalo/Email!"));
-    }
 
     function toggleTheme() {
         const b = document.body;
         const isLight = b.getAttribute('data-theme') === 'light';
         b.setAttribute('data-theme', isLight ? 'dark' : 'light');
-        document.getElementById('themeText').innerText = isLight ? "☀️ Light Mode" : "🌙 Dark Mode";
+        document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
 
     render();
