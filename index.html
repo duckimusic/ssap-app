@@ -36,7 +36,14 @@
         
         /* Improved Logo & Video Styling */
         .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; display: flex; flex-direction: column; align-items: center; }
-        #splash-logo { width: 160px; height: auto; display: block; margin-bottom: 20px; transition: 0.5s; }
+        #splash-logo {
+    width: 160px;
+    height: auto;
+    border-radius: 20px; /* Rounds the corners of your logo's background */
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); /* Adds a very faint outer glow */
+    background: white; /* Forces the background to stay white if it's currently a different 'off-white' */
+    padding: 10px; /* Gives the logo some breathing room inside the square */
+}
         #splash-video { width: 300px; max-width: 85%; height: auto; display: none; margin: 0 auto 15px auto; }
         
         .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
