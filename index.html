@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Self Assessment Plan</title>
+    <title>Student Support & Assessment Platform</title>
     <style>
         :root {
             --primary: #2e7d32;
@@ -36,11 +36,13 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.85rem; opacity: 0.8; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
         
         .btn-add { background: var(--primary); color: white; flex: 2; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
-        
-        .student-card { background: var(--card); border-radius: 10px; border-left: 6px solid var(--accent); padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px var(--shadow); position: relative; border: 1px solid var(--border); }
+        .btn-ai { background: #673ab7; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .btn-ai:hover { background: #5e35b1; }
+
+        .student-card { background: var(--card); border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px var(--shadow); position: relative; border: 1px solid var(--border); }
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
         
         .card-tools { display: flex; align-items: center; gap: 10px; }
@@ -50,21 +52,25 @@
         .dropdown { 
             position: absolute; right: 20px; top: 50px; background: var(--card); 
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 6px; 
-            display: none; z-index: 100; min-width: 140px; border: 1px solid var(--border);
+            display: none; z-index: 100; min-width: 180px; border: 1px solid var(--border);
         }
         .dropdown.show { display: block; }
-        .dropdown button { width: 100%; text-align: left; padding: 10px 15px; background: none; border: none; cursor: pointer; color: var(--text); }
+        .dropdown button { width: 100%; text-align: left; padding: 10px 15px; background: none; border: none; cursor: pointer; color: var(--text); font-size: 0.9rem; }
         .dropdown button:hover { background: var(--border); }
 
         .section-label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-top: 15px; }
         .text-content { white-space: pre-wrap; font-size: 0.95rem; margin-bottom: 5px; }
+        
+        .status-badge { font-size: 0.65rem; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; margin-top: 5px; }
+        
+        .ai-box { background: rgba(103, 58, 183, 0.05); border: 1px dashed #673ab7; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
     </style>
 </head>
 <body data-theme="light">
 
 <div class="container">
     <div class="header-box">
-        <h2>Progress Tracker</h2>
+        <h2>SSAP 2.0 + AI Organizer</h2>
         <button class="theme-btn" onclick="toggleTheme()" id="themeText">🌙 Dark Mode</button>
     </div>
 
@@ -75,16 +81,34 @@
     <div class="input-card">
         <form id="studentForm">
             <div class="form-grid">
-                <div><label>Name</label><input type="text" id="name" required placeholder="Minh (Tom)"></div>
-                <div><label>STI (Numbers Only)</label><input type="text" id="sti" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" placeholder="e.g. 018"></div>
+                <div><label>Student Name</label><input type="text" id="name" required placeholder="Minh (Tom)"></div>
+                <div><label>STI (Numeric)</label><input type="text" id="sti" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" placeholder="e.g. 018"></div>
                 <div><label>Unit</label><input type="text" id="unit" placeholder="Unit 9"></div>
                 <div class="full"><label>Course</label><input type="text" id="course" placeholder="Solution 3rd"></div>
+                
+                <div class="full ai-box">
+                    <label style="color: #673ab7;">📋 Daily Progress Log (Dump all your notes here)</label>
+                    <textarea id="dailyLog" rows="4" placeholder="March 5: Unit 9 ex 1-5. Homework done. Speaking good..."></textarea>
+                    <button type="button" class="btn-ai" onclick="runAISorter()">✨ AI Organize Notes</button>
+                </div>
+
                 <div class="full"><label>Listening & Speaking</label><textarea id="ls" rows="2"></textarea></div>
                 <div class="full"><label>Reading & Writing</label><textarea id="rw" rows="2"></textarea></div>
-                <div class="full"><label>Overall</label><textarea id="overall" rows="2"></textarea></div>
+                
+                <div class="full">
+                    <label>Status Override</label>
+                    <select id="statusOverride">
+                        <option value="auto">🤖 Auto-Detect</option>
+                        <option value="good">🟢 Excelling</option>
+                        <option value="developing">🟡 Developing</option>
+                        <option value="support">🔴 Support Needed</option>
+                    </select>
+                </div>
+
+                <div class="full"><label>Overall Summary</label><textarea id="overall" rows="2" placeholder="Final comment for the report..."></textarea></div>
             </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button type="submit" id="submitBtn" class="btn-add">Save Student</button>
+                <button type="submit" id="submitBtn" class="btn-add">Save Record</button>
                 <button type="button" onclick="exportCSV()" style="background:#1976d2; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer">Export Excel</button>
             </div>
         </form>
@@ -94,29 +118,75 @@
 </div>
 
 <script>
-let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+    let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
     let editIdx = null;
 
-    // --- NEW: Status Logic ---
-    function getStatus(overall) {
-        const text = overall.toLowerCase();
-        if (text.includes("excel") || text.includes("great") || text.includes("good")) 
-            return { label: "Excelling", color: "#2e7d32" };
-        if (text.includes("struggle") || text.includes("slow") || text.includes("need")) 
-            return { label: "Support Needed", color: "#d32f2f" };
+    // --- AI LOGIC: UNLIMITED KEYWORD SORTER ---
+    function runAISorter() {
+        const rawText = document.getElementById('dailyLog').value;
+        if(!rawText) return alert("Please enter some notes in the Daily Log first!");
+
+        const lines = rawText.split(/[.;\n]/); // Split by period, semicolon or new line
+        let lsArr = [];
+        let rwArr = [];
+        let units = [];
+
+        // Keywords for sorting
+        const lsKeywords = ["speak", "listen", "nói", "nghe", "pronounce", "vocal", "talk", "phát âm"];
+        const rwKeywords = ["write", "read", "viết", "đọc", "homework", "btvn", "exercise", "gram", "vocab", "vocabulary", "book"];
+
+        lines.forEach(line => {
+            const l = line.toLowerCase().trim();
+            if(!l) return;
+
+            // Check for Units
+            const unitMatch = l.match(/unit\s?\d+/);
+            if(unitMatch) units.push(unitMatch[0].toUpperCase());
+
+            // Sort by keyword
+            if (lsKeywords.some(kw => l.includes(kw))) {
+                lsArr.push(line.trim());
+            } else if (rwKeywords.some(kw => l.includes(kw))) {
+                rwArr.push(line.trim());
+            }
+        });
+
+        // Update the form fields
+        if(lsArr.length > 0) document.getElementById('ls').value = lsArr.join(". ") + ".";
+        if(rwArr.length > 0) document.getElementById('rw').value = rwArr.join(". ") + ".";
+        
+        // Auto-fill Unit if found
+        if(units.length > 0) document.getElementById('unit').value = [...new Set(units)].join(", ");
+
+        // Generate a quick summary
+        document.getElementById('overall').value = `Completed ${units.length > 0 ? units[0] : 'lessons'} with steady progress. ${lsArr.length > 0 ? 'Active in speaking activities.' : ''}`;
+
+        alert("Notes organized! Review the boxes below.");
+    }
+
+    function getStatus(overall, override = "auto") {
+        if (override === "good") return { label: "Excelling", color: "#2e7d32" };
+        if (override === "developing") return { label: "Developing", color: "#ffa000" };
+        if (override === "support") return { label: "Support Needed", color: "#d32f2f" };
+
+        const text = (overall || "").toLowerCase();
+        const excelling = ["tốt", "toàn diện", "hoàn thành", "vượt trội", "nổi bật", "good", "excel"];
+        const support = ["yếu", "chậm", "cần cố gắng", "khó khăn", "thiếu tập trung", "need", "slow"];
+
+        if (excelling.some(word => text.includes(word))) return { label: "Excelling", color: "#2e7d32" };
+        if (support.some(word => text.includes(word))) return { label: "Support Needed", color: "#d32f2f" };
         return { label: "Developing", color: "#ffa000" };
     }
 
-    // --- NEW: Report Summarizer ---
     function generateProfessionalReport(s) {
-        const status = getStatus(s.overall).label;
-        return `Student Progress Report: ${s.name}\n` +
+        const status = getStatus(s.overall, s.statusOverride).label;
+        return `STUDENT PROGRESS REPORT: ${s.name.toUpperCase()}\n` +
                `Course: ${s.course} (${s.unit})\n\n` +
-               `Current Standing: ${status}\n` +
-               `• Listening & Speaking: ${s.ls || "Steady progress."}\n` +
-               `• Reading & Writing: ${s.rw || "Developing skills."}\n` +
-               `• Teacher Summary: ${s.overall}\n\n` +
-               `Please feel free to reach out if you have any questions!`;
+               `Status: ${status}\n` +
+               `• L&S: ${s.ls || "Steady participation."}\n` +
+               `• R&W: ${s.rw || "Developing skills."}\n` +
+               `• Summary: ${s.overall}\n\n` +
+               `Best regards!`;
     }
 
     function toggleTheme() {
@@ -141,16 +211,14 @@ let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
         );
 
         filtered.forEach((s, i) => {
-            const status = getStatus(s.overall);
-            const displaySti = s.sti ? `#${s.sti}` : '';
-            
+            const status = getStatus(s.overall, s.statusOverride || "auto");
             list.innerHTML += `
                 <div class="student-card" style="border-left: 6px solid ${status.color}">
                     <div class="card-header">
                         <div>
-                            <h3 style="margin:0">${s.name} <small style="opacity:0.6; font-weight:normal">${displaySti}</small></h3>
+                            <h3 style="margin:0">${s.name} <small style="opacity:0.6">#${s.sti || ''}</small></h3>
                             <div style="font-size:0.85rem; opacity:0.7">${s.course} • ${s.unit}</div>
-                            <span style="font-size:0.7rem; background:${status.color}; color:white; padding:2px 8px; border-radius:10px; font-weight:bold; text-transform:uppercase;">${status.label}</span>
+                            <div class="status-badge" style="background:${status.color}">${status.label}</div>
                         </div>
                         <div class="card-tools">
                             <button class="tool-btn" onclick="deleteStudent(${i})">🗑️</button>
@@ -158,13 +226,12 @@ let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
                             <div class="dropdown" id="menu-${i}">
                                 <button onclick="editStudent(${i})">✏️ Edit</button>
                                 <button onclick="copyReport(${i})">📋 Copy Parent Report</button>
-                                <button onclick="copyRaw(${i})">🔗 Copy Raw Notes</button>
                             </div>
                         </div>
                     </div>
                     <div class="section-label">Listening & Speaking</div><div class="text-content">${s.ls}</div>
                     <div class="section-label">Reading & Writing</div><div class="text-content">${s.rw}</div>
-                    <div class="section-label" style="color:orange">Overall Summary</div><div class="text-content" style="font-weight:500">${s.overall}</div>
+                    <div class="section-label" style="color:orange">Overall</div><div class="text-content">${s.overall}</div>
                 </div>`;
         });
     }
@@ -186,18 +253,20 @@ let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
             course: document.getElementById('course').value,
             ls: document.getElementById('ls').value, 
             rw: document.getElementById('rw').value,
-            overall: document.getElementById('overall').value
+            overall: document.getElementById('overall').value,
+            statusOverride: document.getElementById('statusOverride').value,
+            dailyLog: document.getElementById('dailyLog').value
         };
         if(editIdx !== null) { students[editIdx] = data; editIdx = null; }
         else { students.unshift(data); }
         localStorage.setItem('stu_final_v2', JSON.stringify(students));
         e.target.reset();
-        document.getElementById('submitBtn').innerText = "Save Student";
+        document.getElementById('submitBtn').innerText = "Save Record";
         render();
     });
 
     function deleteStudent(i) {
-        if(confirm('Delete this record?')) {
+        if(confirm('Delete?')) {
             students.splice(i, 1);
             localStorage.setItem('stu_final_v2', JSON.stringify(students));
             render();
@@ -213,6 +282,8 @@ let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
         document.getElementById('ls').value = s.ls;
         document.getElementById('rw').value = s.rw;
         document.getElementById('overall').value = s.overall;
+        document.getElementById('dailyLog').value = s.dailyLog || "";
+        document.getElementById('statusOverride').value = s.statusOverride || "auto";
         editIdx = i;
         document.getElementById('submitBtn').innerText = "Update Record";
         window.scrollTo({top:0, behavior:'smooth'});
@@ -220,19 +291,13 @@ let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
 
     function copyReport(i) {
         const report = generateProfessionalReport(students[i]);
-        navigator.clipboard.writeText(report).then(() => alert("Parent Report copied to clipboard!"));
-    }
-
-    function copyRaw(i) {
-        const s = students[i];
-        const t = `${s.name}\nL&S: ${s.ls}\nR&W: ${s.rw}\nOverall: ${s.overall}`;
-        navigator.clipboard.writeText(t).then(() => alert("Raw notes copied!"));
+        navigator.clipboard.writeText(report).then(() => alert("Copied!"));
     }
 
     function exportCSV() {
         let csv = "\uFEFFName,STI,Course,Unit,L&S,R&W,Overall\n";
         students.forEach(s => {
-            const c = (v) => `"${v.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+            const c = (v) => `"${(v || "").replace(/"/g, '""').replace(/\n/g, ' ')}"`;
             csv += `${c(s.name)},${c(s.sti)},${c(s.course)},${c(s.unit)},${c(s.ls)},${c(s.rw)},${c(s.overall)}\n`;
         });
         const link = document.createElement("a");
