@@ -40,13 +40,13 @@
             z-index: 9999;
             transition: opacity 1s ease-out, visibility 1s;
         }
-        #splash-video { 
-            max-width: 300px; 
+
+        #splash-anim { 
+            max-width: 320px; 
             height: auto; 
+            display: block;
             outline: none;
         }
-        /* Hides play buttons on mobile */
-        video::-webkit-media-controls { display:none !important; }
         
         .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
@@ -83,9 +83,7 @@
 <body data-theme="light">
 
     <div id="splash-screen">
-        <video id="splash-video" width="300" autoplay muted loop playsinline preload="auto">
-            <source src="animation.mp4" type="video/mp4">
-        </video>
+        <img src="animation.webp" id="splash-anim" alt="Loading Animation">
         <p style="color: white; font-size: 0.8rem; letter-spacing: 3px; margin-top: 20px; opacity: 0.6;">SSAP 2.0</p>
     </div>
 
@@ -141,31 +139,33 @@
     let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
     let editIdx = null;
 
-    // --- 2. SPLASH SCREEN LOGIC ---
+    // --- 2. SYNCED SPLASH SCREEN LOGIC ---
     window.addEventListener('load', () => {
         const splash = document.getElementById('splash-screen');
-        const video = document.getElementById('splash-video');
-
-        // Force play logic
-        video.muted = true;
-        const playPromise = video.play();
-
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Autoplay prevented, clicking would normally be required.");
-            });
-        }
-
-        // Wait 5 seconds, then fade out
-        setTimeout(() => {
-            splash.classList.add('splash-hidden');
-            document.body.classList.add('app-loaded');
+        const splashAudio = new Audio('splash-sound.mp3');
+        
+        // Ensure audio triggers immediately upon buffering
+        splashAudio.addEventListener('canplaythrough', () => {
+            splashAudio.play().catch(e => console.log("Autoplay blocked: Click needed for sound"));
             
+            // Starts the 5s timer ONLY once audio and visuals are synced
             setTimeout(() => {
-                splash.remove();
-                video.pause();
-            }, 1000);
-        }, 5000); 
+                splash.classList.add('splash-hidden');
+                document.body.classList.add('app-loaded');
+                
+                // Fade out audio gracefully
+                const fadeAudio = setInterval(() => {
+                    if (splashAudio.volume > 0.1) {
+                        splashAudio.volume -= 0.1;
+                    } else {
+                        splashAudio.pause();
+                        clearInterval(fadeAudio);
+                    }
+                }, 100);
+
+                setTimeout(() => splash.remove(), 1000);
+            }, 5000); 
+        }, { once: true });
     });
 
     // --- 3. AI LOGIC ---
@@ -260,6 +260,7 @@
         if(editIdx !== null) students[editIdx] = data; else students.unshift(data);
         localStorage.setItem('stu_final_v2', JSON.stringify(students));
         e.target.reset(); editIdx = null; render();
+        document.getElementById('submitBtn').innerText = "Save Student Record";
     });
 
     function deleteStudent(i) { if(confirm('Delete?')) { students.splice(i, 1); localStorage.setItem('stu_final_v2', JSON.stringify(students)); render(); } }
