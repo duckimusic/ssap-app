@@ -172,6 +172,18 @@
         bonus: [] 
     };
 
+    // --- ADD CONNECTION LISTENERS HERE ---
+    window.addEventListener('online', () => {
+        console.log("Back online! Syncing with Cloudflare...");
+        initApp(); // This refreshes your data from the cloud now that you're back
+    });
+
+    window.addEventListener('offline', () => {
+        // Using a non-blocking console log or a small UI notification is 
+        // usually better than an 'alert' so it doesn't interrupt your teaching!
+        console.warn("Working Offline: Changes saved locally for now.");
+    });
+    
     let editIdx = null;
     let duckCount = 0;
     let isAdmin = false;
@@ -201,7 +213,7 @@
             }
             renderAll();
         } catch (e) {
-            console.error("Cloud Sync Failed. Working offline.", e);
+            console.error("Cloud Sync Failed. Falling back to local.", e);
             // Fallback for offline use
             appData.students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
             appData.daily = JSON.parse(localStorage.getItem('stu_daily')) || [];
