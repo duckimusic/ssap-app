@@ -3,60 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSAP 2.0 | AI Educator Assistant</title>
-
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon.png">
-    <meta name="theme-color" content="#2e7d32">
-    
+    <title>SSAP 2.0 | Progress Hub</title>
     <style>
         :root {
             --primary: #2e7d32; --accent: #4caf50; --bg: #f4f7f6; --card: #ffffff;
             --text: #2c3e50; --border: #eeeeee; --shadow: rgba(0,0,0,0.08);
-            --splash-bg: #1a1a1a; 
+            --splash-bg: #000000;
         }
-        [data-theme="dark"] { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333333; --shadow: rgba(0,0,0,0.4); }
+        [data-theme="dark"] {
+            --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333333; --shadow: rgba(0,0,0,0.4);
+        }
 
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 0; margin: 0; overflow-x: hidden; }
-        
+
         /* --- SPLASH SCREEN --- */
         #splash-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--splash-bg);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 9999; transition: opacity 0.8s ease-out, visibility 0.8s;
+            background: var(--splash-bg); display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 9999;
         }
-        #splash-anim { max-width: 300px; height: auto; display: block; border: none; }
-        .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        #tap-box { text-align: center; cursor: pointer; transition: 0.3s; }
+        .pulse-circle {
+            width: 80px; height: 80px; border: 3px solid var(--primary);
+            border-radius: 50%; margin: 0 auto 20px; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+        
+        #intro-video { display: none; width: 100%; max-width: 600px; outline: none; }
+        .splash-hidden { opacity: 0; visibility: hidden; transition: 1s ease-in-out; }
 
         /* --- MAIN INTERFACE --- */
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; opacity: 0; transition: opacity 0.5s ease-in; }
-        .app-loaded .container { opacity: 1; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; opacity: 0; transition: 1s; }
+        .app-ready .container { opacity: 1; }
 
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .theme-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
         .search-input { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); color: var(--text); margin-bottom: 20px; box-shadow: 0 2px 5px var(--shadow); }
+
         .input-card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px var(--shadow); border: 1px solid var(--border); margin-bottom: 30px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .full { grid-column: 1 / -1; }
+        
         label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.85rem; opacity: 0.8; }
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
+        
         .ai-box { background: rgba(103, 58, 183, 0.05); border: 2px dashed #673ab7; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .btn-ai { background: #673ab7; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        .btn-add { background: var(--primary); color: white; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; flex: 2; }
+        .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; flex: 2; }
+
         .student-card { background: var(--card); border-radius: 10px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--border); position: relative; box-shadow: 0 2px 10px var(--shadow); }
         .card-tools { display: flex; gap: 10px; position: absolute; right: 20px; top: 20px; }
-        .tool-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; color: var(--text); opacity: 0.6; }
+        .tool-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; opacity: 0.6; color: var(--text); }
+
         .section-label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-top: 15px; }
-        .text-content { font-size: 0.95rem; line-height: 1.5; margin: 5px 0; white-space: pre-wrap; }
-        .status-badge { font-size: 0.65rem; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; margin-top: 5px; }
+        .status-badge { font-size: 0.65rem; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; display: inline-block; margin-top: 5px; }
     </style>
 </head>
-<body data-theme="light">
+<body>
 
     <div id="splash-screen">
-        <img src="animation.webp?v=1" id="splash-anim" alt="Loading...">
-        <p style="color: white; font-size: 0.8rem; letter-spacing: 4px; margin-top: 25px; font-weight: bold;">SSAP 2.0</p>
+        <div id="tap-box" onclick="startIntro()">
+            <div class="pulse-circle"></div>
+            <p style="color: white; font-weight: bold; letter-spacing: 3px;">TAP TO LAUNCH SSAP 2.0</p>
+        </div>
+        <video id="intro-video" playsinline>
+            <source src="animation.mp4" type="video/mp4">
+        </video>
     </div>
 
     <div class="container">
@@ -64,24 +77,29 @@
             <h2>SSAP <span style="color:var(--primary); font-weight: 800;">2.0 AI</span></h2>
             <button class="theme-btn" onclick="toggleTheme()" id="themeText">🌙 Dark Mode</button>
         </div>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search by name or STI..." oninput="render()">
+
+        <input type="text" id="searchInput" class="search-input" placeholder="Search name or STI..." oninput="render()">
+
         <div class="input-card">
             <form id="studentForm">
                 <div class="form-grid">
-                    <div><label>Student Name</label><input type="text" id="name" required placeholder="Minh (Tom)"></div>
-                    <div><label>STI</label><input type="text" id="sti" inputmode="numeric" placeholder="e.g. 018"></div>
+                    <div><label>Name</label><input type="text" id="name" required placeholder="Minh (Tom)"></div>
+                    <div><label>STI</label><input type="text" id="sti" inputmode="numeric" placeholder="018"></div>
                     <div><label>Unit</label><input type="text" id="unit" placeholder="Unit 9"></div>
                     <div class="full"><label>Course</label><input type="text" id="course" placeholder="Family and Friends 1"></div>
+                    
                     <div class="full ai-box">
-                        <label style="color: #673ab7;">📋 Raw Progress Notes</label>
-                        <textarea id="dailyLog" rows="4"></textarea>
-                        <button type="button" class="btn-ai" id="aiBtn" onclick="runAISorter()">✨ Generate Professional Report</button>
+                        <label style="color: #673ab7;">📋 Raw Notes</label>
+                        <textarea id="dailyLog" rows="3" placeholder="Notes for the AI..."></textarea>
+                        <button type="button" class="btn-ai" id="aiBtn" onclick="runAISorter()">✨ Generate Report</button>
                     </div>
-                    <div class="full"><label>Listening & Speaking</label><textarea id="ls" rows="3"></textarea></div>
-                    <div class="full"><label>Reading & Writing</label><textarea id="rw" rows="3"></textarea></div>
-                    <div class="full"><label>Overall Summary</label><textarea id="overall" rows="3"></textarea></div>
+
+                    <div class="full"><label>Listening & Speaking</label><textarea id="ls" rows="2"></textarea></div>
+                    <div class="full"><label>Reading & Writing</label><textarea id="rw" rows="2"></textarea></div>
+                    <div class="full"><label>Overall Summary</label><textarea id="overall" rows="2"></textarea></div>
+
                     <div class="full">
-                        <label>Status Override</label>
+                        <label>Status</label>
                         <select id="statusOverride">
                             <option value="auto">🤖 Auto-Detect</option>
                             <option value="good">🟢 Excelling</option>
@@ -91,54 +109,45 @@
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="submit" id="submitBtn" class="btn-add">Save Student Record</button>
-                    <button type="button" onclick="exportCSV()" style="background:#1976d2; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer">Export Excel</button>
+                    <button type="submit" id="submitBtn" class="btn-add">Save Record</button>
+                    <button type="button" onclick="exportCSV()" style="background:#1976d2; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer">Excel Export</button>
                 </div>
             </form>
         </div>
+
         <div id="studentList"></div>
     </div>
 
 <script>
     const GEMINI_API_KEY = "AIzaSyDG5RYfo6gF6o19MkoL2DXjb_xV8LWc27U"; 
-    let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+    let students = JSON.parse(localStorage.getItem('ssap_v2_final')) || [];
     let editIdx = null;
 
-    // --- 2. FAST-FIRE SPLASH LOGIC ---
-    // This script runs immediately, ignoring all load delays.
-    (function() {
-        const audio = new Audio('splash-sound.mp3?v=1');
-        
-        // Attempt audio as soon as script hits the browser
-        audio.play().catch(() => console.log("Audio waiting for first click."));
+    // --- SPLASH LOGIC ---
+    function startIntro() {
+        const tapBox = document.getElementById('tap-box');
+        const video = document.getElementById('intro-video');
+        tapBox.style.display = 'none';
+        video.style.display = 'block';
+        video.play().catch(() => enterApp());
+        video.onended = () => enterApp();
+        setTimeout(enterApp, 7000); // Fail-safe
+    }
 
-        // Force transition after exactly 4 seconds
-        setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            if (splash) {
-                splash.classList.add('splash-hidden');
-                document.body.classList.add('app-loaded');
-                
-                // Audio Fade
-                const fade = setInterval(() => {
-                    if (audio.volume > 0.1) audio.volume -= 0.1;
-                    else { audio.pause(); clearInterval(fade); }
-                }, 100);
+    function enterApp() {
+        const splash = document.getElementById('splash-screen');
+        splash.classList.add('splash-hidden');
+        document.body.classList.add('app-ready');
+        setTimeout(() => splash.remove(), 1000);
+    }
 
-                setTimeout(() => splash.remove(), 1000);
-            }
-        }, 4000); 
-    })();
-
-    // --- 3. AI & DATA MANAGEMENT (Kept Original Logic) ---
+    // --- AI LOGIC ---
     async function runAISorter() {
         const log = document.getElementById('dailyLog').value;
-        const sName = document.getElementById('name').value || "Bé";
-        const course = document.getElementById('course').value || "English";
         const btn = document.getElementById('aiBtn');
         if (!log) return alert("Enter notes!");
-        btn.disabled = true; btn.innerText = "✍️ AI Writing...";
-        const prompt = `Act as a professional English Teacher. Convert these notes to a report in Vietnamese. Student: ${sName} Course: ${course} Notes: ${log} Format JSON: {"ls": "LS", "rw": "RW", "overall": "Summary"}`;
+        btn.disabled = true; btn.innerText = "✍️ AI Thinking...";
+        const prompt = `Act as a professional teacher. Convert notes to report in Vietnamese. Format JSON: {"ls": "...", "rw": "...", "overall": "..."}. Notes: ${log}`;
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -149,44 +158,40 @@
             document.getElementById('ls').value = cleanJson.ls;
             document.getElementById('rw').value = cleanJson.rw;
             document.getElementById('overall').value = cleanJson.overall;
-        } catch (e) { alert("Check API/Internet."); } finally { btn.disabled = false; btn.innerText = "✨ Generate Professional Report"; }
+        } catch (e) { alert("API Error."); } finally { btn.disabled = false; btn.innerText = "✨ Generate Report"; }
     }
 
-    function getStatus(overall, override = "auto") {
+    // --- CORE APP ---
+    function getStatus(overall, override) {
         if (override !== "auto") {
             const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
             return { label: map[override][0], color: map[override][1] };
         }
         const t = (overall || "").toLowerCase();
-        if (["tốt", "vượt trội", "nổi bật"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
-        if (["yếu", "chậm", "cần cố gắng"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
+        if (["tốt", "vượt trội"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
+        if (["yếu", "cần cố gắng"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
         return { label: "Developing", color: "#ffa000" };
     }
 
     function render() {
         const list = document.getElementById('studentList');
         const search = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = '';
-        students.filter(s => s.name.toLowerCase().includes(search) || (s.sti && s.sti.includes(search))).forEach((s, i) => {
-            const status = getStatus(s.overall, s.statusOverride || "auto");
-            list.innerHTML += `<div class="student-card" style="border-left: 6px solid ${status.color}">
-                <div class="card-header">
-                    <div>
-                        <h3 style="margin:0">${s.name} <small style="opacity:0.6">#${s.sti || ''}</small></h3>
-                        <div style="font-size:0.85rem; opacity:0.7">${s.course} • ${s.unit}</div>
-                        <div class="status-badge" style="background:${status.color}">${status.label}</div>
-                    </div>
+        list.innerHTML = students.filter(s => s.name.toLowerCase().includes(search) || (s.sti && s.sti.includes(search))).map((s, i) => {
+            const status = getStatus(s.overall, s.statusOverride);
+            return `
+                <div class="student-card" style="border-left: 6px solid ${status.color}">
                     <div class="card-tools">
                         <button class="tool-btn" onclick="deleteStudent(${i})">🗑️</button>
                         <button class="tool-btn" onclick="editStudent(${i})">✏️</button>
-                        <button class="tool-btn" onclick="copyReport(${i})">📋</button>
                     </div>
-                </div>
-                <div class="section-label">Listening & Speaking</div><div class="text-content">${s.ls}</div>
-                <div class="section-label">Reading & Writing</div><div class="text-content">${s.rw}</div>
-                <div class="section-label" style="color:orange">Overall</div><div class="text-content">${s.overall}</div>
-            </div>`;
-        });
+                    <h3>${s.name} <small>#${s.sti || ''}</small></h3>
+                    <div style="font-size:0.8rem; opacity:0.6">${s.course} • ${s.unit}</div>
+                    <div class="status-badge" style="background:${status.color}">${status.label}</div>
+                    <div class="section-label">L&S</div><p>${s.ls}</p>
+                    <div class="section-label">R&W</div><p>${s.rw}</p>
+                    <div class="section-label" style="color:orange">Overall</div><p>${s.overall}</p>
+                </div>`;
+        }).join('');
     }
 
     document.getElementById('studentForm').addEventListener('submit', (e) => {
@@ -199,12 +204,12 @@
             dailyLog: document.getElementById('dailyLog').value
         };
         if(editIdx !== null) students[editIdx] = data; else students.unshift(data);
-        localStorage.setItem('stu_final_v2', JSON.stringify(students));
+        localStorage.setItem('ssap_v2_final', JSON.stringify(students));
         e.target.reset(); editIdx = null; render();
-        document.getElementById('submitBtn').innerText = "Save Student Record";
+        document.getElementById('submitBtn').innerText = "Save Record";
     });
 
-    function deleteStudent(i) { if(confirm('Delete?')) { students.splice(i, 1); localStorage.setItem('stu_final_v2', JSON.stringify(students)); render(); } }
+    function deleteStudent(i) { if(confirm('Delete?')) { students.splice(i, 1); localStorage.setItem('ssap_v2_final', JSON.stringify(students)); render(); } }
 
     function editStudent(i) {
         const s = students[i];
@@ -216,17 +221,11 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    function copyReport(i) {
-        const s = students[i];
-        const report = `BÁO CÁO HỌC TẬP: ${s.name}\nLớp: ${s.course}\n\nNghe & Nói:\n${s.ls}\n\nĐọc & Viết:\n${s.rw}\n\nTổng quan:\n${s.overall}`;
-        navigator.clipboard.writeText(report).then(() => alert("Report copied!"));
-    }
-
     function toggleTheme() {
         const b = document.body;
-        const isLight = b.getAttribute('data-theme') === 'light';
-        b.setAttribute('data-theme', isLight ? 'dark' : 'light');
-        document.getElementById('themeText').innerText = isLight ? "☀️ Light Mode" : "🌙 Dark Mode";
+        const isDark = b.getAttribute('data-theme') === 'dark';
+        b.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        document.getElementById('themeText').innerText = isDark ? "🌙 Dark Mode" : "☀️ Light Mode";
     }
 
     function exportCSV() {
@@ -237,8 +236,9 @@
         });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-        link.download = "SSAP_Data.csv"; link.click();
+        link.download = "Progress_Report.csv"; link.click();
     }
+
     render();
 </script>
 </body>
