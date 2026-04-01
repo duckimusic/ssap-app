@@ -94,8 +94,30 @@
 </div>
 
 <script>
-    let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+let students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
     let editIdx = null;
+
+    // --- NEW: Status Logic ---
+    function getStatus(overall) {
+        const text = overall.toLowerCase();
+        if (text.includes("excel") || text.includes("great") || text.includes("good")) 
+            return { label: "Excelling", color: "#2e7d32" };
+        if (text.includes("struggle") || text.includes("slow") || text.includes("need")) 
+            return { label: "Support Needed", color: "#d32f2f" };
+        return { label: "Developing", color: "#ffa000" };
+    }
+
+    // --- NEW: Report Summarizer ---
+    function generateProfessionalReport(s) {
+        const status = getStatus(s.overall).label;
+        return `Student Progress Report: ${s.name}\n` +
+               `Course: ${s.course} (${s.unit})\n\n` +
+               `Current Standing: ${status}\n` +
+               `• Listening & Speaking: ${s.ls || "Steady progress."}\n` +
+               `• Reading & Writing: ${s.rw || "Developing skills."}\n` +
+               `• Teacher Summary: ${s.overall}\n\n` +
+               `Please feel free to reach out if you have any questions!`;
+    }
 
     function toggleTheme() {
         const body = document.body;
@@ -119,26 +141,30 @@
         );
 
         filtered.forEach((s, i) => {
+            const status = getStatus(s.overall);
             const displaySti = s.sti ? `#${s.sti}` : '';
+            
             list.innerHTML += `
-                <div class="student-card">
+                <div class="student-card" style="border-left: 6px solid ${status.color}">
                     <div class="card-header">
                         <div>
                             <h3 style="margin:0">${s.name} <small style="opacity:0.6; font-weight:normal">${displaySti}</small></h3>
                             <div style="font-size:0.85rem; opacity:0.7">${s.course} • ${s.unit}</div>
+                            <span style="font-size:0.7rem; background:${status.color}; color:white; padding:2px 8px; border-radius:10px; font-weight:bold; text-transform:uppercase;">${status.label}</span>
                         </div>
                         <div class="card-tools">
                             <button class="tool-btn" onclick="deleteStudent(${i})">🗑️</button>
                             <button class="tool-btn" onclick="toggleMenu(event, ${i})">⋮</button>
                             <div class="dropdown" id="menu-${i}">
                                 <button onclick="editStudent(${i})">✏️ Edit</button>
-                                <button onclick="copyText(${i})">📋 Copy</button>
+                                <button onclick="copyReport(${i})">📋 Copy Parent Report</button>
+                                <button onclick="copyRaw(${i})">🔗 Copy Raw Notes</button>
                             </div>
                         </div>
                     </div>
                     <div class="section-label">Listening & Speaking</div><div class="text-content">${s.ls}</div>
                     <div class="section-label">Reading & Writing</div><div class="text-content">${s.rw}</div>
-                    <div class="section-label" style="color:orange">Overall</div><div class="text-content" style="font-weight:500">${s.overall}</div>
+                    <div class="section-label" style="color:orange">Overall Summary</div><div class="text-content" style="font-weight:500">${s.overall}</div>
                 </div>`;
         });
     }
@@ -192,10 +218,15 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    function copyText(i) {
+    function copyReport(i) {
+        const report = generateProfessionalReport(students[i]);
+        navigator.clipboard.writeText(report).then(() => alert("Parent Report copied to clipboard!"));
+    }
+
+    function copyRaw(i) {
         const s = students[i];
         const t = `${s.name}\nL&S: ${s.ls}\nR&W: ${s.rw}\nOverall: ${s.overall}`;
-        navigator.clipboard.writeText(t).then(() => alert("Copied!"));
+        navigator.clipboard.writeText(t).then(() => alert("Raw notes copied!"));
     }
 
     function exportCSV() {
@@ -206,7 +237,7 @@
         });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-        link.download = "Students_Export.csv";
+        link.download = "SSAP_Backup.csv";
         link.click();
     }
 
