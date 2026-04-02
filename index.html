@@ -34,16 +34,15 @@
             color: white; text-align: center;
         }
         
-        /* Improved Logo & Video Styling */
         .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; display: flex; flex-direction: column; align-items: center; }
         #splash-logo {
-    width: 160px;
-    height: auto;
-    border-radius: 20px; /* Rounds the corners of your logo's background */
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); /* Adds a very faint outer glow */
-    background: white; /* Forces the background to stay white if it's currently a different 'off-white' */
-    padding: 10px; /* Gives the logo some breathing room inside the square */
-}
+            width: 160px;
+            height: auto;
+            border-radius: 20px; 
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); 
+            background: white; 
+            padding: 10px; 
+        }
         #splash-video { width: 300px; max-width: 85%; height: auto; display: none; margin: 0 auto 15px auto; }
         
         .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
@@ -73,9 +72,54 @@
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
         .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
 
+        /* --- GAMIFIED LEADERBOARD --- */
+        .leaderboard { 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 25px 15px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            border-bottom: 4px solid var(--xp-gold);
+            text-align: center;
+        }
+
+        #alien-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        #leaderboard-alien {
+            font-size: 60px;
+            animation: alienFloat 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes alienFloat {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+
+        .leaderboard-ranks {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .rank-card {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid var(--xp-gold);
+        }
+
         /* --- XP & CARDS --- */
         .xp-badge { background: var(--xp-gold); color: #000; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.7rem; }
-        .leaderboard { background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--xp-gold); }
         .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
         .section-label { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; margin-top: 15px; color: var(--accent); }
         .status-badge { font-size: 0.6rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 10px; }
@@ -121,7 +165,11 @@
     </div>
 
     <div id="page-daily" class="page active">
-        <div class="leaderboard" id="xpLeaderboard">🏆 XP Leaderboard: No data yet</div>
+        <div class="leaderboard" id="xpLeaderboard">
+             <div id="alien-container"><span id="leaderboard-alien">👾</span></div>
+             <div id="leaderboard-content">🏆 XP Leaderboard: Loading...</div>
+        </div>
+
         <div class="input-card">
             <form id="dailyForm">
                 <div class="form-grid">
@@ -211,7 +259,6 @@
     }
 
     async function initApp() {
-        // Offline check: Load from localStorage immediately if no internet
         if (!navigator.onLine) {
             loadLocalBackup();
             renderAll();
@@ -264,7 +311,6 @@
         startBtn.addEventListener('click', () => {
             audio.play().catch(e => console.log("Audio block")); 
             
-            // UI Sequence: Hide logo/text, show video
             logo.style.display = 'none';
             document.querySelector('.logo-text').style.display = 'none';
             video.style.display = 'block';
@@ -308,13 +354,31 @@
 
     function renderDaily() {
         const list = document.getElementById('dailyList');
+        const leaderboardUI = document.getElementById('leaderboard-content');
         const search = document.getElementById('searchDaily').value.toLowerCase();
         list.innerHTML = '';
         
+        // Calculate Totals for Leaderboard
         const totals = {};
         appData.daily.forEach(l => totals[l.name] = (totals[l.name] || 0) + l.xp);
         const top = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,3);
-        document.getElementById('xpLeaderboard').innerHTML = "🏆 Leaderboard: " + top.map(t => `${t[0]} (${t[1]} XP)`).join(" | ");
+        
+        // Render Gamified Leaderboard Content
+        if(top.length > 0) {
+            leaderboardUI.innerHTML = `
+                <div style="font-weight: 800; color: var(--xp-gold); letter-spacing: 1px; margin-bottom: 10px;">TOP PERFORMERS</div>
+                <div class="leaderboard-ranks">
+                    ${top.map((t, i) => `
+                        <div class="rank-card">
+                            <span>${i+1}. ${t[0]}</span>
+                            <span class="xp-badge">${t[1]} XP</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            leaderboardUI.innerHTML = "🏆 No XP data yet. Start logging!";
+        }
 
         appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
