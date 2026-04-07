@@ -118,6 +118,37 @@
             border-left: 3px solid var(--xp-gold);
         }
 
+        /* --- FULL LEADERBOARD STYLES --- */
+        .view-all-btn {
+            background: transparent;
+            border: 1px solid var(--xp-gold);
+            color: var(--xp-gold);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .view-all-btn:hover { background: var(--xp-gold); color: #000; }
+        
+        .full-rank-list {
+            display: none; 
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            text-align: left;
+        }
+        .full-rank-list.show { display: block; }
+        
+        .rank-item-mini {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+        }
+
         /* --- XP & CARDS --- */
         .xp-badge { background: var(--xp-gold); color: #000; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.7rem; }
         .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
@@ -139,11 +170,9 @@
 <div id="splash-screen">
     <div class="logo-container">
         <img id="splash-logo" src="logo.png" alt="SSAP Logo">
-        
         <video id="splash-video" muted playsinline preload="auto">
             <source src="animation.mp4" type="video/mp4">
         </video>
-        
         <h1 class="logo-text">SSAP 2.0</h1>
         <div class="loading-bar-mini" id="loader"></div>
         <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none;">Tap to start</button>
@@ -168,6 +197,9 @@
         <div class="leaderboard" id="xpLeaderboard">
              <div id="alien-container"><span id="leaderboard-alien">👾</span></div>
              <div id="leaderboard-content">🏆 XP Leaderboard: Loading...</div>
+             
+             <button class="view-all-btn" onclick="toggleFullLeaderboard()" id="btnViewAll">View Full Rankings</button>
+             <div id="full-leaderboard" class="full-rank-list"></div>
         </div>
 
         <div class="input-card">
@@ -176,7 +208,7 @@
                     <div><label>Name</label><input type="text" id="d-name" required></div>
                     <div><label>STI</label><input type="text" id="d-sti"></div>
                     <div><label>Date</label><input type="date" id="d-date"></div>
-                    <div class="full"><label>XP Change (+/-)</label><input type="number" id="d-xp" value="0"></div>
+                    <div class="full"><label>XP Change (+/-)</label><input type="text" inputmode="decimal" id="d-xp" value="0"></div>
                     <div class="full"><label>Notes / Behavior</label><textarea id="d-notes" rows="2"></textarea></div>
                 </div>
                 <button type="submit" class="btn-add">Log Daily Activity</button>
@@ -238,46 +270,24 @@
     let isAdmin = false;
 
     // --- CONNECTION LISTENERS ---
-    window.addEventListener('online', () => {
-        console.log("Online! Syncing...");
-        initApp(); 
-    });
+    window.addEventListener('online', () => { initApp(); });
+    window.addEventListener('offline', () => { console.warn("Offline"); });
 
-    window.addEventListener('offline', () => {
-        console.warn("Offline: Using local cache.");
-    });
-
-    // --- CLOUD SYNC ---
     async function syncCloud(method, data = null) {
-        const options = { 
-            method,
-            headers: { 'Content-Type': 'application/json' }
-        };
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
         if (data) options.body = JSON.stringify(data);
         const res = await fetch('/api/data', options);
         return method === 'GET' ? await res.json() : null;
     }
 
     async function initApp() {
-        if (!navigator.onLine) {
-            loadLocalBackup();
-            renderAll();
-            return;
-        }
-
+        if (!navigator.onLine) { loadLocalBackup(); renderAll(); return; }
         try {
             const cloudData = await syncCloud('GET');
-            if (cloudData && cloudData.students) {
-                appData = cloudData;
-            } else {
-                loadLocalBackup();
-            }
+            if (cloudData && cloudData.students) appData = cloudData;
+            else loadLocalBackup();
             renderAll();
-        } catch (e) {
-            console.error("Cloud error, using local.", e);
-            loadLocalBackup();
-            renderAll();
-        }
+        } catch (e) { loadLocalBackup(); renderAll(); }
     }
 
     function loadLocalBackup() {
@@ -304,22 +314,15 @@
         const video = document.getElementById('splash-video');
         const logo = document.getElementById('splash-logo');
         const audio = document.getElementById('startup-sound');
-        
         document.getElementById('loader').style.display = 'none';
         startBtn.style.display = 'inline-block';
         
         startBtn.addEventListener('click', () => {
-            audio.play().catch(e => console.log("Audio block")); 
-            
+            audio.play().catch(e => {}); 
             logo.style.display = 'none';
             document.querySelector('.logo-text').style.display = 'none';
             video.style.display = 'block';
-            
-            video.play().catch(e => {
-                console.log("Video fail", e);
-                hideSplash();
-            });
-
+            video.play().catch(e => hideSplash());
             startBtn.style.display = 'none';
             video.onended = hideSplash; 
             setTimeout(hideSplash, 5000); 
@@ -327,7 +330,7 @@
         });
     });
 
-    // --- TABS ---
+    // --- TABS & UI ---
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -336,63 +339,86 @@
         renderAll();
     }
 
-    // --- LOGIC: DAILY ---
+    function toggleFullLeaderboard() {
+        const list = document.getElementById('full-leaderboard');
+        const btn = document.getElementById('btnViewAll');
+        list.classList.toggle('show');
+        btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
+    }
+
+    // --- LOGIC: DAILY & LEADERBOARD ---
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const xpInput = document.getElementById('d-xp').value;
         const entry = {
-            name: document.getElementById('d-name').value,
+            name: document.getElementById('d-name').value.trim(),
             sti: document.getElementById('d-sti').value,
             date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
-            xp: parseInt(document.getElementById('d-xp').value),
+            xp: parseInt(xpInput) || 0, // Xử lý parse từ text input an toàn
             notes: document.getElementById('d-notes').value
         };
         appData.daily.unshift(entry);
         await triggerSave(); 
         e.target.reset(); 
+        document.getElementById('d-xp').value = "0";
         renderDaily();
     });
 
     function renderDaily() {
         const list = document.getElementById('dailyList');
         const leaderboardUI = document.getElementById('leaderboard-content');
+        const fullLeaderboardUI = document.getElementById('full-leaderboard');
         const search = document.getElementById('searchDaily').value.toLowerCase();
         list.innerHTML = '';
         
-        // Calculate Totals for Leaderboard
+        // 1. Tính toán tổng XP
         const totals = {};
-        appData.daily.forEach(l => totals[l.name] = (totals[l.name] || 0) + l.xp);
-        const top = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,3);
+        appData.daily.forEach(l => {
+            const n = l.name;
+            totals[n] = (totals[n] || 0) + l.xp;
+        });
+
+        // 2. Sắp xếp toàn bộ
+        const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+        const top = allSorted.slice(0,3);
         
-        // Render Gamified Leaderboard Content
+        // 3. Render Top Performers
         if(top.length > 0) {
             leaderboardUI.innerHTML = `
                 <div style="font-weight: 800; color: var(--xp-gold); letter-spacing: 1px; margin-bottom: 10px;">TOP PERFORMERS</div>
                 <div class="leaderboard-ranks">
                     ${top.map((t, i) => `
-                        <div class="rank-card">
-                            <span>${i+1}. ${t[0]}</span>
-                            <span class="xp-badge">${t[1]} XP</span>
-                        </div>
+                        <div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>
                     `).join('')}
+                </div>`;
+            
+            // 4. Render danh sách đầy đủ (ẩn bên trong nút View All)
+            fullLeaderboardUI.innerHTML = allSorted.map((t, i) => `
+                <div class="rank-item-mini">
+                    <span>${i+1}. ${t[0]}</span>
+                    <span style="color:var(--xp-gold); font-weight:bold;">${t[1]} XP</span>
                 </div>
-            `;
+            `).join('');
         } else {
-            leaderboardUI.innerHTML = "🏆 No XP data yet. Start logging!";
+            leaderboardUI.innerHTML = "🏆 No XP data yet.";
+            fullLeaderboardUI.innerHTML = "";
         }
 
+        // 5. Render History List
         appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
+            const xpSign = l.xp > 0 ? '+' : '';
             list.innerHTML += `
                 <div class="student-card">
                     <button onclick="deleteItem('daily', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
-                    <strong>${l.name}</strong> <span class="xp-badge">${l.xp > 0 ? '+'+l.xp : l.xp} XP</span>
+                    <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp < 0 ? '#d32f2f' : 'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
                     <div style="font-size:0.8rem; opacity:0.6">${l.date}</div>
                     <div style="margin-top:10px;">${l.notes}</div>
                 </div>`;
         });
     }
 
-    // --- LOGIC: MONTHLY ---
+    // --- CÁC HÀM CÒN LẠI (MONTHLY, BONUS, THEME) ---
     function getStatus(txt, override) {
         if (override !== "auto") {
             const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
@@ -415,8 +441,7 @@
         if (editIdx !== null) { appData.students[editIdx] = data; editIdx = null; } 
         else { appData.students.unshift(data); }
         await triggerSave();
-        e.target.reset(); 
-        renderMonthly();
+        e.target.reset(); renderMonthly();
     });
 
     function renderMonthly() {
@@ -426,70 +451,51 @@
         appData.students.forEach((s, i) => {
             if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
             const status = getStatus(s.overall, s.statusOverride || "auto");
-            list.innerHTML += `
-                <div class="student-card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                        <div class="student-info">
-                            <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800;">${s.name} <span style="font-weight: 300; opacity: 0.5; font-size: 1.1rem;">#${s.sti || '000'}</span></h3>
-                            <div style="font-size: 0.85rem; opacity: 0.6; margin-top: 2px; font-weight: 500;">${s.course || 'General'} • Unit ${s.unit || '0'}</div>
-                        </div>
-                        <div class="action-btns no-print" style="position: static; display: flex; gap: 15px; opacity: 0.5;">
-                            <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
-                            <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
-                        </div>
+            list.innerHTML += `<div class="student-card">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                    <div><h3 style="margin:0;">${s.name} <span style="opacity:0.5; font-size:1.1rem;">#${s.sti || '000'}</span></h3></div>
+                    <div style="display:flex; gap:15px; opacity:0.5;">
+                        <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
+                        <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
                     </div>
-                    <div class="section-label">Listening & Speaking</div>
-                    <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.ls || 'N/A'}</div>
-                    <div class="section-label">Reading & Writing</div>
-                    <div style="font-size: 0.9rem; margin-bottom: 15px; white-space: pre-wrap;">${s.rw || 'N/A'}</div>
-                    <div class="section-label">Overall</div>
-                    <div style="font-size: 0.9rem; white-space: pre-wrap;">${s.overall || 'N/A'}</div>
-                    <div class="status-badge" style="background:${status.color}">${status.label}</div>
-                </div>`;
+                </div>
+                <div class="section-label">Listening & Speaking</div><div>${s.ls || 'N/A'}</div>
+                <div class="section-label">Reading & Writing</div><div>${s.rw || 'N/A'}</div>
+                <div class="section-label">Overall</div><div>${s.overall || 'N/A'}</div>
+                <div class="status-badge" style="background:${status.color}">${status.label}</div>
+            </div>`;
         });
     }
 
     function editStudent(i) {
         const s = appData.students[i];
-        document.getElementById('name').value = s.name;
-        document.getElementById('sti').value = s.sti;
-        document.getElementById('unit').value = s.unit;
-        document.getElementById('course').value = s.course;
-        document.getElementById('ls').value = s.ls;
-        document.getElementById('rw').value = s.rw;
+        document.getElementById('name').value = s.name; document.getElementById('sti').value = s.sti;
+        document.getElementById('unit').value = s.unit; document.getElementById('course').value = s.course;
+        document.getElementById('ls').value = s.ls; document.getElementById('rw').value = s.rw;
         document.getElementById('overall').value = s.overall;
         document.getElementById('statusOverride').value = s.statusOverride || "auto";
-        editIdx = i;
-        window.scrollTo(0, 0);
+        editIdx = i; window.scrollTo(0,0);
     }
 
-    // --- LOGIC: BONUS ---
     function duckSecret() {
         duckCount++;
-        if(duckCount === 8) {
-            isAdmin = !isAdmin;
-            alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED");
-            duckCount = 0; renderBonus();
-        }
+        if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
     }
 
     document.getElementById('bonusForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
-        await triggerSave();
-        e.target.reset(); renderBonus();
+        await triggerSave(); e.target.reset(); renderBonus();
     });
 
     function renderBonus() {
         const list = document.getElementById('bonusList');
         list.innerHTML = '';
         appData.bonus.forEach((b, i) => {
-            list.innerHTML += `
-                <div class="comment-card">
-                    ${isAdmin ? `<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>` : ''}
-                    <strong>${b.name}</strong> <span style="font-size:0.6rem; opacity:0.5">${b.date}</span>
-                    <p>"${b.msg}"</p>
-                </div>`;
+            list.innerHTML += `<div class="comment-card">
+                ${isAdmin ? `<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>` : ''}
+                <strong>${b.name}</strong> <span style="font-size:0.6rem; opacity:0.5">${b.date}</span><p>"${b.msg}"</p>
+            </div>`;
         });
     }
 
@@ -498,8 +504,7 @@
         if(type === 'daily') appData.daily.splice(i, 1);
         if(type === 'monthly') appData.students.splice(i, 1);
         if(type === 'bonus') appData.bonus.splice(i, 1);
-        await triggerSave();
-        renderAll();
+        await triggerSave(); renderAll();
     }
 
     function toggleTheme() {
