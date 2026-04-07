@@ -23,18 +23,26 @@
 
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 0; margin: 0; overflow-x: hidden; }
         
-        /* --- SPLASH SCREEN (KHÔNG ĐỔI) --- */
+        /* --- SPLASH SCREEN --- */
         #splash-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--splash-bg); display: flex; justify-content: center; align-items: center;
             z-index: 9999; transition: opacity 0.8s ease-out, visibility 0.8s; color: white; text-align: center;
         }
         .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; display: flex; flex-direction: column; align-items: center; }
-        #splash-logo { width: 160px; height: auto; border-radius: 20px; box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); background: white; padding: 10px; }
-        #splash-video { width: 300px; max-width: 85%; height: auto; display: block; margin: 0 auto 15px auto; }
+        #splash-logo { width: 140px; height: auto; border-radius: 20px; margin-bottom: 20px; }
+        
+        /* Video mặc định ẩn, sẽ hiện khi bấm nút */
+        #splash-video { 
+            width: 320px; max-width: 85%; height: auto; 
+            display: none; 
+            margin: 0 auto 15px auto; 
+        }
+
         .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
         .loading-bar-mini { width: 100px; height: 2px; background: #333; margin: 20px auto; position: relative; overflow: hidden; }
         .loading-bar-mini::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: loading 2s infinite; }
+        
         @keyframes loading { to { left: 100%; } }
         @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
         .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -85,10 +93,12 @@
 <div id="splash-screen">
     <div class="logo-container">
         <img id="splash-logo" src="logo.png" alt="SSAP Logo">
-        <video id="splash-video" muted playsinline preload="auto"><source src="animation.mp4" type="video/mp4"></video>
+        <video id="splash-video" muted playsinline preload="auto">
+            <source src="animation.mp4" type="video/mp4">
+        </video>
         <h1 class="logo-text">SSAP 2.0</h1>
         <div class="loading-bar-mini" id="loader"></div>
-        <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none;">Tap to start</button>
+        <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none; text-transform: uppercase; letter-spacing: 2px;">Tap to start</button>
     </div>
 </div>
     
@@ -155,13 +165,13 @@
 
     <div id="page-waitlist" class="page">
         <div class="input-card">
-            <h3 style="margin-top:0; color:var(--waitlist-color)">Học sinh Dự bị / Chưa chính thức</h3>
+            <h3 style="margin-top:0; color:var(--waitlist-color)">Học sinh Dự bị</h3>
             <form id="waitlistForm">
                 <div class="form-grid">
                     <div class="full"><label>Họ và Tên</label><input type="text" id="w-name" required></div>
-                    <div><label>Số điện thoại Phụ huynh</label><input type="tel" id="w-phone"></div>
+                    <div><label>SĐT Phụ huynh</label><input type="tel" id="w-phone"></div>
                     <div><label>Ngày liên hệ</label><input type="date" id="w-date"></div>
-                    <div class="full"><label>Ghi chú (Trình độ, mong muốn...)</label><textarea id="w-notes" rows="3"></textarea></div>
+                    <div class="full"><label>Ghi chú</label><textarea id="w-notes" rows="3"></textarea></div>
                 </div>
                 <button type="submit" class="btn-add" style="background:var(--waitlist-color)">Lưu vào Waitlist</button>
             </form>
@@ -174,7 +184,6 @@
             <div id="the-duck" style="font-size: 5rem; cursor: pointer; text-align: center; margin: 40px 0;" onclick="duckSecret()">🦆</div>
             <p style="font-size:0.6rem; opacity:0.5; text-align:center;">Quack!</p>
         </div>
-        <div id="bonusList"></div>
     </div>
 </div>
 
@@ -183,9 +192,6 @@
 
     // --- CORE ENGINE ---
     async function triggerSave() {
-        if (navigator.onLine) {
-            try { await fetch('/api/data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(appData) }); } catch(e){}
-        }
         localStorage.setItem('ssap_v2_data', JSON.stringify(appData));
     }
 
@@ -194,7 +200,7 @@
         if (saved) appData = JSON.parse(saved);
         if (!appData.waitlist) appData.waitlist = [];
         if (!appData.students) appData.students = [];
-        if (!appData.bonus) appData.bonus = [];
+        if (!appData.daily) appData.daily = [];
     }
 
     function showPage(pageId) {
@@ -205,17 +211,16 @@
         renderAll();
     }
 
-    // --- FORM LOGIC (DAILY, MONTHLY, WAITLIST) ---
+    // --- FORMS ---
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const entry = {
+        appData.daily.unshift({
             name: document.getElementById('d-name').value.trim(),
             sti: document.getElementById('d-sti').value,
             date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
             xp: parseInt(document.getElementById('d-xp').value) || 0,
             notes: document.getElementById('d-notes').value
-        };
-        appData.daily.unshift(entry);
+        });
         await triggerSave();
         e.target.reset();
         document.getElementById('d-date').valueAsDate = new Date();
@@ -225,15 +230,14 @@
 
     document.getElementById('studentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const entry = {
+        appData.students.unshift({
             name: document.getElementById('name').value,
             sti: document.getElementById('sti').value,
             unit: document.getElementById('unit').value,
             course: document.getElementById('course').value,
             overall: document.getElementById('overall').value,
             statusOverride: document.getElementById('statusOverride').value
-        };
-        appData.students.unshift(entry);
+        });
         await triggerSave();
         e.target.reset();
         renderMonthly();
@@ -241,20 +245,19 @@
 
     document.getElementById('waitlistForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const entry = {
+        appData.waitlist.unshift({
             name: document.getElementById('w-name').value,
             phone: document.getElementById('w-phone').value,
             date: document.getElementById('w-date').value || new Date().toISOString().split('T')[0],
             notes: document.getElementById('w-notes').value
-        };
-        appData.waitlist.unshift(entry);
+        });
         await triggerSave();
         e.target.reset();
         document.getElementById('w-date').valueAsDate = new Date();
         renderWaitlist();
     });
 
-    // --- RENDER FUNCTIONS ---
+    // --- RENDERING ---
     function renderDaily() {
         const list = document.getElementById('dailyList');
         const lbContent = document.getElementById('leaderboard-content');
@@ -284,46 +287,34 @@
 
     function renderMonthly() {
         const container = document.getElementById('studentList');
-        if(!container) return;
-        container.innerHTML = '';
+        if(!container) return; container.innerHTML = '';
         appData.students.forEach((s, i) => {
-            let color = "#607d8b";
-            if(s.statusOverride === 'good') color = "#2e7d32";
-            if(s.statusOverride === 'developing') color = "#f1c40f";
-            if(s.statusOverride === 'support') color = "#e74c3c";
-            container.innerHTML += `
-                <div class="student-card">
-                    <button onclick="deleteItem('students', ${i})" style="float:right; border:none; background:none;">🗑️</button>
-                    <div class="section-label">${s.course} - Unit ${s.unit}</div>
-                    <h3 style="margin:5px 0">${s.name} (STI: ${s.sti})</h3>
-                    <p style="white-space: pre-wrap;">${s.overall}</p>
-                    <span class="status-badge" style="background:${color}">${s.statusOverride.toUpperCase()}</span>
-                </div>`;
+            let color = s.statusOverride === 'good' ? "#2e7d32" : (s.statusOverride === 'developing' ? "#f1c40f" : "#e74c3c");
+            container.innerHTML += `<div class="student-card">
+                <button onclick="deleteItem('students', ${i})" style="float:right; border:none; background:none;">🗑️</button>
+                <div class="section-label">${s.course} - Unit ${s.unit}</div>
+                <h3 style="margin:5px 0">${s.name}</h3>
+                <p style="white-space: pre-wrap;">${s.overall}</p>
+                <span class="status-badge" style="background:${color}">${s.statusOverride.toUpperCase()}</span>
+            </div>`;
         });
     }
 
     function renderWaitlist() {
         const container = document.getElementById('waitlistContent');
-        if(!container) return;
-        container.innerHTML = '';
+        if(!container) return; container.innerHTML = '';
         appData.waitlist.forEach((s, i) => {
-            container.innerHTML += `
-                <div class="student-card waitlist-card">
-                    <button onclick="deleteItem('waitlist', ${i})" style="float:right; border:none; background:none;">🗑️</button>
-                    <h3 style="margin:0">${s.name}</h3>
-                    <div style="margin: 10px 0;">📞 <a href="tel:${s.phone}" class="phone-link">${s.phone || 'N/A'}</a></div>
-                    <div style="font-size:0.8rem; opacity:0.6;">Ngày: ${s.date}</div>
-                    <p style="background:rgba(0,0,0,0.03); padding:10px; border-radius:5px;">${s.notes}</p>
-                </div>`;
+            container.innerHTML += `<div class="student-card waitlist-card">
+                <button onclick="deleteItem('waitlist', ${i})" style="float:right; border:none; background:none;">🗑️</button>
+                <h3 style="margin:0">${s.name}</h3>
+                <div style="margin: 10px 0;">📞 <a href="tel:${s.phone}" class="phone-link">${s.phone || 'N/A'}</a></div>
+                <p>${s.notes}</p>
+            </div>`;
         });
     }
 
-    // --- SYSTEM ---
     async function deleteItem(type, i) {
-        if(!confirm("Xóa mục này?")) return;
-        appData[type].splice(i, 1);
-        await triggerSave();
-        renderAll();
+        if(confirm("Xóa mục này?")) { appData[type].splice(i, 1); await triggerSave(); renderAll(); }
     }
 
     function toggleTheme() {
@@ -339,30 +330,43 @@
         document.getElementById('btnViewAll').innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
 
-    function duckSecret() { alert("Quack! Cứu hộ logic đã có mặt!"); }
+    function duckSecret() { alert("Quack! Hệ thống ổn định."); }
+    function renderAll() { renderDaily(); renderWaitlist(); renderMonthly(); }
 
-    function renderAll() { 
-        renderDaily(); 
-        renderWaitlist();
-        renderMonthly();
-    }
-    
+    // --- LOGIC KHỞI ĐỘNG CHUẨN ---
     window.addEventListener('load', () => {
         loadLocal();
         if(document.getElementById('d-date')) document.getElementById('d-date').valueAsDate = new Date();
         if(document.getElementById('w-date')) document.getElementById('w-date').valueAsDate = new Date();
         
-        // GIỮ NGUYÊN LOGIC KHỞI ĐỘNG CỦA BẠN
         const startBtn = document.getElementById('start-btn');
         const splash = document.getElementById('splash-screen');
         const startupSound = document.getElementById('startup-sound');
+        const splashVideo = document.getElementById('splash-video');
+        const splashLogo = document.getElementById('splash-logo');
 
         startBtn.style.display = 'block';
+
         startBtn.addEventListener('click', () => {
-             startupSound.play().catch(e => console.log("Audio play blocked"));
-             splash.classList.add('splash-hidden');
-             document.body.classList.add('app-loaded');
-             renderAll();
+            // Ẩn nút và logo để nhường chỗ cho video
+            startBtn.style.display = 'none';
+            splashLogo.style.display = 'none';
+
+            // 1. Chạy âm thanh
+            startupSound.play().catch(e => console.log("Audio blocked"));
+
+            // 2. Hiện và chạy Video
+            if (splashVideo) {
+                splashVideo.style.display = 'block';
+                splashVideo.play().catch(e => console.log("Video blocked"));
+            }
+
+            // 3. Đợi video chạy một lúc (1.5s) rồi vào App
+            setTimeout(() => {
+                splash.classList.add('splash-hidden');
+                document.body.classList.add('app-loaded');
+                renderAll();
+            }, 1500); 
         });
     });
 </script>
