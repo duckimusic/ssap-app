@@ -14,7 +14,7 @@
         :root {
             --primary: #2e7d32; --accent: #4caf50; --bg: #f4f7f6; --card: #ffffff;
             --text: #2c3e50; --border: #eeeeee; --shadow: rgba(0,0,0,0.08);
-            --splash-bg: #000000; --xp-gold: #f1c40f;
+            --splash-bg: #000000; --xp-gold: #f1c40f; --waitlist-color: #607d8b;
         }
 
         [data-theme="dark"] {
@@ -25,37 +25,23 @@
         
         /* --- SPLASH SCREEN --- */
         #splash-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--splash-bg);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 9999;
-            transition: opacity 0.8s ease-out, visibility 0.8s;
-            color: white; text-align: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--splash-bg); display: flex; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.8s ease-out, visibility 0.8s; color: white; text-align: center;
         }
-        
         .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; display: flex; flex-direction: column; align-items: center; }
-        #splash-logo {
-            width: 160px;
-            height: auto;
-            border-radius: 20px; 
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); 
-            background: white; 
-            padding: 10px; 
-        }
+        #splash-logo { width: 160px; height: auto; border-radius: 20px; box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); background: white; padding: 10px; }
         #splash-video { width: 300px; max-width: 85%; height: auto; display: none; margin: 0 auto 15px auto; }
-        
         .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
         .loading-bar-mini { width: 100px; height: 2px; background: #333; margin: 20px auto; position: relative; overflow: hidden; }
         .loading-bar-mini::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: loading 2s infinite; }
-        
         @keyframes loading { to { left: 100%; } }
         @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
         .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
         /* --- TABS --- */
-        .nav-tabs { display: flex; background: #000; padding: 10px 20px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .tab-btn { background: transparent; border: none; color: #666; padding: 12px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
+        .nav-tabs { display: flex; background: #000; padding: 10px 10px; gap: 5px; position: sticky; top: 0; z-index: 1000; overflow-x: auto; white-space: nowrap; }
+        .tab-btn { background: transparent; border: none; color: #666; padding: 12px 15px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 1px; flex-shrink: 0; }
         .tab-btn.active { color: #fff; border-bottom: 2px solid var(--accent); }
 
         .container { max-width: 900px; margin: 20px auto; padding: 0 20px; opacity: 0; transition: opacity 1s ease-in; }
@@ -72,82 +58,16 @@
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
         .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
 
-        /* --- GAMIFIED LEADERBOARD --- */
-        .leaderboard { 
-            background: #1a1a1a; 
-            color: white; 
-            padding: 25px 15px; 
-            border-radius: 12px; 
-            margin-bottom: 20px; 
-            border-bottom: 4px solid var(--xp-gold);
-            text-align: center;
-        }
-
-        #alien-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-
-        #leaderboard-alien {
-            font-size: 60px;
-            animation: alienFloat 3s ease-in-out infinite;
-            display: inline-block;
-        }
-
-        @keyframes alienFloat {
-            0%, 100% { transform: translateY(0) rotate(-2deg); }
-            50% { transform: translateY(-12px) rotate(2deg); }
-        }
-
-        .leaderboard-ranks {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 15px;
-            text-align: left;
-        }
-
-        .rank-card {
-            background: rgba(255,255,255,0.05);
-            padding: 10px 15px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 3px solid var(--xp-gold);
-        }
-
-        /* --- FULL LEADERBOARD STYLES --- */
-        .view-all-btn {
-            background: transparent;
-            border: 1px solid var(--xp-gold);
-            color: var(--xp-gold);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            margin-top: 15px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .view-all-btn:hover { background: var(--xp-gold); color: #000; }
-        
-        .full-rank-list {
-            display: none; 
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px dashed rgba(255,255,255,0.1);
-            text-align: left;
-        }
+        /* --- LEADERBOARD --- */
+        .leaderboard { background: #1a1a1a; color: white; padding: 25px 15px; border-radius: 12px; margin-bottom: 20px; border-bottom: 4px solid var(--xp-gold); text-align: center; }
+        #leaderboard-alien { font-size: 60px; animation: alienFloat 3s ease-in-out infinite; display: inline-block; }
+        @keyframes alienFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+        .leaderboard-ranks { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; text-align: left; }
+        .rank-card { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--xp-gold); }
+        .view-all-btn { background: transparent; border: 1px solid var(--xp-gold); color: var(--xp-gold); padding: 8px 15px; border-radius: 20px; font-size: 0.7rem; margin-top: 15px; cursor: pointer; }
+        .full-rank-list { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1); text-align: left; }
         .full-rank-list.show { display: block; }
-        
-        .rank-item-mini {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.85rem;
-        }
+        .rank-item-mini { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
 
         /* --- XP & CARDS --- */
         .xp-badge { background: var(--xp-gold); color: #000; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.7rem; }
@@ -155,14 +75,9 @@
         .section-label { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; margin-top: 15px; color: var(--accent); }
         .status-badge { font-size: 0.6rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 10px; }
 
-        /* --- DUCK PAGE --- */
-        .duck-box { text-align: center; margin-bottom: 20px; }
-        #the-duck { font-size: 3.5rem; cursor: pointer; display: inline-block; transition: 0.2s; user-select: none; }
-        #the-duck:active { transform: scale(1.3); }
-        .comment-card { background: #fffde7; border-left: 4px solid #fbc02d; padding: 15px; margin-bottom: 10px; border-radius: 4px; color: #333; }
-        
-        .action-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
-        .no-export { display: none !important; }
+        /* --- WAITLIST CARD --- */
+        .waitlist-card { border-left: 5px solid var(--waitlist-color); }
+        .phone-link { color: var(--primary); text-decoration: none; font-weight: bold; font-size: 0.9rem; }
     </style>
 </head>
 <body data-theme="light">
@@ -170,9 +85,7 @@
 <div id="splash-screen">
     <div class="logo-container">
         <img id="splash-logo" src="logo.png" alt="SSAP Logo">
-        <video id="splash-video" muted playsinline preload="auto">
-            <source src="animation.mp4" type="video/mp4">
-        </video>
+        <video id="splash-video" muted playsinline preload="auto"><source src="animation.mp4" type="video/mp4"></video>
         <h1 class="logo-text">SSAP 2.0</h1>
         <div class="loading-bar-mini" id="loader"></div>
         <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none;">Tap to start</button>
@@ -183,7 +96,8 @@
 
 <nav class="nav-tabs">
     <button class="tab-btn active" onclick="showPage('daily')">📅 Daily</button>
-    <button class="tab-btn" onclick="showPage('monthly')">📊 Monthly SSAP</button>
+    <button class="tab-btn" onclick="showPage('monthly')">📊 Monthly</button>
+    <button class="tab-btn" onclick="showPage('waitlist')">⏳ Waitlist</button>
     <button class="tab-btn" onclick="showPage('bonus')">🦆 Bonus</button>
 </nav>
 
@@ -194,28 +108,23 @@
     </div>
 
     <div id="page-daily" class="page active">
-        <div class="leaderboard" id="xpLeaderboard">
+        <div class="leaderboard">
              <div id="alien-container"><span id="leaderboard-alien">👾</span></div>
              <div id="leaderboard-content">🏆 XP Leaderboard: Loading...</div>
-             
              <button class="view-all-btn" onclick="toggleFullLeaderboard()" id="btnViewAll">View Full Rankings</button>
              <div id="full-leaderboard" class="full-rank-list"></div>
         </div>
-
         <div class="input-card">
             <form id="dailyForm">
                 <div class="form-grid">
                     <div><label>Name</label><input type="text" id="d-name" required></div>
                     <div><label>STI</label><input type="text" id="d-sti"></div>
                     <div><label>Date</label><input type="date" id="d-date"></div>
-                    <div class="full"><label>XP Change (+/-)</label><input type="text" inputmode="decimal" id="d-xp" value="0"></div>
-                    <div class="full"><label>Notes / Behavior</label><textarea id="d-notes" rows="2"></textarea></div>
+                    <div class="full"><label>XP Change (+/-)</label><input type="text" inputmode="numeric" pattern="[0-9-]*" id="d-xp" value="0"></div>
+                    <div class="full"><label>Notes</label><textarea id="d-notes" rows="2"></textarea></div>
                 </div>
                 <button type="submit" class="btn-add">Log Daily Activity</button>
             </form>
-        </div>
-        <div class="form-grid" style="margin-bottom: 20px;">
-            <input type="text" id="searchDaily" placeholder="Filter by name/STI..." oninput="renderDaily()">
         </div>
         <div id="dailyList"></div>
     </div>
@@ -228,9 +137,7 @@
                     <div><label>STI</label><input type="text" id="sti"></div>
                     <div><label>Unit</label><input type="text" id="unit"></div>
                     <div class="full"><label>Course</label><input type="text" id="course"></div>
-                    <div class="full"><label>L & S</label><textarea id="ls" rows="2"></textarea></div>
-                    <div class="full"><label>R & W</label><textarea id="rw" rows="2"></textarea></div>
-                    <div class="full"><label>Overall</label><textarea id="overall" rows="2"></textarea></div>
+                    <div class="full"><label>Overall</label><textarea id="overall" rows="3"></textarea></div>
                     <div class="full">
                         <select id="statusOverride">
                             <option value="auto">🤖 Auto-Detect</option>
@@ -240,97 +147,57 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" id="submitBtn" class="btn-add">Save Monthly Record</button>
+                <button type="submit" class="btn-add">Save Monthly Record</button>
             </form>
         </div>
-        <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
+    </div>
+
+    <div id="page-waitlist" class="page">
+        <div class="input-card">
+            <h3 style="margin-top:0; color:var(--waitlist-color)">Học sinh Dự bị / Chưa chính thức</h3>
+            <form id="waitlistForm">
+                <div class="form-grid">
+                    <div class="full"><label>Họ và Tên</label><input type="text" id="w-name" required></div>
+                    <div><label>Số điện thoại Phụ huynh</label><input type="tel" id="w-phone"></div>
+                    <div><label>Ngày liên hệ</label><input type="date" id="w-date"></div>
+                    <div class="full"><label>Ghi chú (Trình độ, mong muốn...)</label><textarea id="w-notes" rows="3"></textarea></div>
+                </div>
+                <button type="submit" class="btn-add" style="background:var(--waitlist-color)">Lưu vào Waitlist</button>
+            </form>
+        </div>
+        <div id="waitlistContent"></div>
     </div>
 
     <div id="page-bonus" class="page">
         <div class="duck-box">
-            <div id="the-duck" onclick="duckSecret()">🦆</div>
-            <p style="font-size:0.6rem; opacity:0.5">This duck quacks 8 times!</p>
-        </div>
-        <div class="input-card">
-            <form id="bonusForm">
-                <label>Student Name</label><input type="text" id="b-name" required><br><br>
-                <label>Q&A / English Note</label><textarea id="b-msg" rows="3"></textarea>
-                <button type="submit" class="btn-add" style="background:#f1c40f; color:#000;">Post to Wall</button>
-            </form>
+            <div id="the-duck" style="font-size: 5rem; cursor: pointer; text-align: center; margin: 40px 0;" onclick="duckSecret()">🦆</div>
+            <p style="font-size:0.6rem; opacity:0.5; text-align:center;">Quack!</p>
         </div>
         <div id="bonusList"></div>
     </div>
 </div>
 
 <script>
-    let appData = { students: [], daily: [], bonus: [] };
+    let appData = { students: [], daily: [], bonus: [], waitlist: [] };
     let editIdx = null;
-    let duckCount = 0;
-    let isAdmin = false;
 
-    // --- CONNECTION LISTENERS ---
-    window.addEventListener('online', () => { initApp(); });
-    window.addEventListener('offline', () => { console.warn("Offline"); });
-
-    async function syncCloud(method, data = null) {
-        const options = { method, headers: { 'Content-Type': 'application/json' } };
-        if (data) options.body = JSON.stringify(data);
-        const res = await fetch('/api/data', options);
-        return method === 'GET' ? await res.json() : null;
-    }
-
-    async function initApp() {
-        if (!navigator.onLine) { loadLocalBackup(); renderAll(); return; }
-        try {
-            const cloudData = await syncCloud('GET');
-            if (cloudData && cloudData.students) appData = cloudData;
-            else loadLocalBackup();
-            renderAll();
-        } catch (e) { loadLocalBackup(); renderAll(); }
-    }
-
-    function loadLocalBackup() {
-        appData.students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
-        appData.daily = JSON.parse(localStorage.getItem('stu_daily')) || [];
-        appData.bonus = JSON.parse(localStorage.getItem('stu_bonus')) || [];
-    }
-
+    // --- CORE ENGINE ---
     async function triggerSave() {
-        if (navigator.onLine) await syncCloud('POST', appData);
-        localStorage.setItem('stu_final_v2', JSON.stringify(appData.students));
-        localStorage.setItem('stu_daily', JSON.stringify(appData.daily));
-        localStorage.setItem('stu_bonus', JSON.stringify(appData.bonus));
+        if (navigator.onLine) {
+            try { await fetch('/api/data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(appData) }); } catch(e){}
+        }
+        localStorage.setItem('ssap_v2_data', JSON.stringify(appData));
     }
 
-    // --- SPLASH & STARTUP ---
-    function hideSplash() {
-        document.getElementById('splash-screen').classList.add('splash-hidden');
-        document.body.classList.add('app-loaded');
+    function loadLocal() {
+        const saved = localStorage.getItem('ssap_v2_data');
+        if (saved) appData = JSON.parse(saved);
+        if (!appData.waitlist) appData.waitlist = [];
+        if (!appData.students) appData.students = [];
+        if (!appData.bonus) appData.bonus = [];
     }
 
-    window.addEventListener('load', () => {
-        const startBtn = document.getElementById('start-btn');
-        const video = document.getElementById('splash-video');
-        const logo = document.getElementById('splash-logo');
-        const audio = document.getElementById('startup-sound');
-        document.getElementById('loader').style.display = 'none';
-        startBtn.style.display = 'inline-block';
-        
-        startBtn.addEventListener('click', () => {
-            audio.play().catch(e => {}); 
-            logo.style.display = 'none';
-            document.querySelector('.logo-text').style.display = 'none';
-            video.style.display = 'block';
-            video.play().catch(e => hideSplash());
-            startBtn.style.display = 'none';
-            video.onended = hideSplash; 
-            setTimeout(hideSplash, 5000); 
-            initApp(); 
-        });
-    });
-
-    // --- TABS & UI ---
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -339,6 +206,79 @@
         renderAll();
     }
 
+    // --- WAITLIST LOGIC ---
+    document.getElementById('waitlistForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const entry = {
+            name: document.getElementById('w-name').value,
+            phone: document.getElementById('w-phone').value,
+            date: document.getElementById('w-date').value || new Date().toISOString().split('T')[0],
+            notes: document.getElementById('w-notes').value
+        };
+        appData.waitlist.unshift(entry);
+        await triggerSave();
+        e.target.reset();
+        document.getElementById('w-date').valueAsDate = new Date();
+        renderWaitlist();
+    });
+
+    function renderWaitlist() {
+        const container = document.getElementById('waitlistContent');
+        if(!container) return;
+        container.innerHTML = '';
+        appData.waitlist.forEach((s, i) => {
+            container.innerHTML += `
+                <div class="student-card waitlist-card">
+                    <button onclick="deleteItem('waitlist', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
+                    <h3 style="margin:0">${s.name}</h3>
+                    <div style="margin: 10px 0;">
+                        📞 <a href="tel:${s.phone}" class="phone-link">${s.phone || 'N/A'}</a>
+                    </div>
+                    <div style="font-size:0.8rem; opacity:0.6;">Ngày đăng ký: ${s.date}</div>
+                    <p style="background:rgba(0,0,0,0.03); padding:10px; border-radius:5px; font-size:0.9rem; white-space: pre-wrap;">${s.notes}</p>
+                </div>`;
+        });
+    }
+
+    // --- MONTHLY LOGIC ---
+    document.getElementById('studentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const entry = {
+            name: document.getElementById('name').value,
+            sti: document.getElementById('sti').value,
+            unit: document.getElementById('unit').value,
+            course: document.getElementById('course').value,
+            overall: document.getElementById('overall').value,
+            statusOverride: document.getElementById('statusOverride').value
+        };
+        appData.students.unshift(entry);
+        await triggerSave();
+        e.target.reset();
+        renderMonthly();
+    });
+
+    function renderMonthly() {
+        const container = document.getElementById('studentList');
+        if(!container) return;
+        container.innerHTML = '';
+        appData.students.forEach((s, i) => {
+            let color = "#607d8b";
+            if(s.statusOverride === 'good') color = "#2e7d32";
+            if(s.statusOverride === 'developing') color = "#f1c40f";
+            if(s.statusOverride === 'support') color = "#e74c3c";
+
+            container.innerHTML += `
+                <div class="student-card">
+                    <button onclick="deleteItem('students', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
+                    <div class="section-label">${s.course} - Unit ${s.unit}</div>
+                    <h3 style="margin:5px 0">${s.name} (STI: ${s.sti})</h3>
+                    <p style="font-size:0.9rem; line-height:1.4;">${s.overall}</p>
+                    <span class="status-badge" style="background:${color}">${s.statusOverride.toUpperCase()}</span>
+                </div>`;
+        });
+    }
+
+    // --- DAILY & XP LOGIC ---
     function toggleFullLeaderboard() {
         const list = document.getElementById('full-leaderboard');
         const btn = document.getElementById('btnViewAll');
@@ -346,165 +286,56 @@
         btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
 
-    // --- LOGIC: DAILY & LEADERBOARD ---
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const xpInput = document.getElementById('d-xp').value;
         const entry = {
             name: document.getElementById('d-name').value.trim(),
             sti: document.getElementById('d-sti').value,
             date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
-            xp: parseInt(xpInput) || 0, // Xử lý parse từ text input an toàn
+            xp: parseInt(document.getElementById('d-xp').value) || 0,
             notes: document.getElementById('d-notes').value
         };
         appData.daily.unshift(entry);
-        await triggerSave(); 
-        e.target.reset(); 
+        await triggerSave();
+        e.target.reset();
+        document.getElementById('d-date').valueAsDate = new Date();
         document.getElementById('d-xp').value = "0";
         renderDaily();
     });
 
     function renderDaily() {
         const list = document.getElementById('dailyList');
-        const leaderboardUI = document.getElementById('leaderboard-content');
-        const fullLeaderboardUI = document.getElementById('full-leaderboard');
-        const search = document.getElementById('searchDaily').value.toLowerCase();
+        const lbContent = document.getElementById('leaderboard-content');
+        const fullLb = document.getElementById('full-leaderboard');
+        if(!list) return;
         list.innerHTML = '';
         
-        // 1. Tính toán tổng XP
         const totals = {};
-        appData.daily.forEach(l => {
-            const n = l.name;
-            totals[n] = (totals[n] || 0) + l.xp;
-        });
-
-        // 2. Sắp xếp toàn bộ
-        const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
-        const top = allSorted.slice(0,3);
+        appData.daily.forEach(l => totals[l.name] = (totals[l.name] || 0) + l.xp);
+        const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
         
-        // 3. Render Top Performers
-        if(top.length > 0) {
-            leaderboardUI.innerHTML = `
-                <div style="font-weight: 800; color: var(--xp-gold); letter-spacing: 1px; margin-bottom: 10px;">TOP PERFORMERS</div>
-                <div class="leaderboard-ranks">
-                    ${top.map((t, i) => `
-                        <div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>
-                    `).join('')}
-                </div>`;
-            
-            // 4. Render danh sách đầy đủ (ẩn bên trong nút View All)
-            fullLeaderboardUI.innerHTML = allSorted.map((t, i) => `
-                <div class="rank-item-mini">
-                    <span>${i+1}. ${t[0]}</span>
-                    <span style="color:var(--xp-gold); font-weight:bold;">${t[1]} XP</span>
-                </div>
-            `).join('');
-        } else {
-            leaderboardUI.innerHTML = "🏆 No XP data yet.";
-            fullLeaderboardUI.innerHTML = "";
+        if(sorted.length > 0) {
+            const top3 = sorted.slice(0,3);
+            lbContent.innerHTML = `<div class="leaderboard-ranks">${top3.map((t, i) => `<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
+            fullLb.innerHTML = sorted.map((t, i) => `<div class="rank-item-mini"><span>${i+1}. ${t[0]}</span><b>${t[1]} XP</b></div>`).join('');
         }
-
-        // 5. Render History List
+        
         appData.daily.forEach((l, i) => {
-            if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
-            const xpSign = l.xp > 0 ? '+' : '';
-            list.innerHTML += `
-                <div class="student-card">
-                    <button onclick="deleteItem('daily', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
-                    <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp < 0 ? '#d32f2f' : 'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
-                    <div style="font-size:0.8rem; opacity:0.6">${l.date}</div>
-                    <div style="margin-top:10px;">${l.notes}</div>
-                </div>`;
-        });
-    }
-
-    // --- CÁC HÀM CÒN LẠI (MONTHLY, BONUS, THEME) ---
-    function getStatus(txt, override) {
-        if (override !== "auto") {
-            const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
-            return { label: map[override][0], color: map[override][1] };
-        }
-        const t = (txt || "").toLowerCase();
-        if (["tốt", "vượt trội", "good", "excellent"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
-        if (["yếu", "cần hỗ trợ", "support", "weak"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
-        return { label: "Developing", color: "#ffa000" };
-    }
-
-    document.getElementById('studentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-            name: document.getElementById('name').value, sti: document.getElementById('sti').value,
-            unit: document.getElementById('unit').value, course: document.getElementById('course').value,
-            ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
-            overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value
-        };
-        if (editIdx !== null) { appData.students[editIdx] = data; editIdx = null; } 
-        else { appData.students.unshift(data); }
-        await triggerSave();
-        e.target.reset(); renderMonthly();
-    });
-
-    function renderMonthly() {
-        const list = document.getElementById('studentList');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = '';
-        appData.students.forEach((s, i) => {
-            if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
-            const status = getStatus(s.overall, s.statusOverride || "auto");
             list.innerHTML += `<div class="student-card">
-                <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                    <div><h3 style="margin:0;">${s.name} <span style="opacity:0.5; font-size:1.1rem;">#${s.sti || '000'}</span></h3></div>
-                    <div style="display:flex; gap:15px; opacity:0.5;">
-                        <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
-                        <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
-                    </div>
-                </div>
-                <div class="section-label">Listening & Speaking</div><div>${s.ls || 'N/A'}</div>
-                <div class="section-label">Reading & Writing</div><div>${s.rw || 'N/A'}</div>
-                <div class="section-label">Overall</div><div>${s.overall || 'N/A'}</div>
-                <div class="status-badge" style="background:${status.color}">${status.label}</div>
+                <button onclick="deleteItem('daily', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
+                <strong>${l.name}</strong> <span class="xp-badge">${l.xp > 0 ? '+'+l.xp : l.xp} XP</span>
+                <div style="font-size:0.8rem; opacity:0.5">${l.date}</div>
+                <div style="margin-top:5px">${l.notes}</div>
             </div>`;
         });
     }
 
-    function editStudent(i) {
-        const s = appData.students[i];
-        document.getElementById('name').value = s.name; document.getElementById('sti').value = s.sti;
-        document.getElementById('unit').value = s.unit; document.getElementById('course').value = s.course;
-        document.getElementById('ls').value = s.ls; document.getElementById('rw').value = s.rw;
-        document.getElementById('overall').value = s.overall;
-        document.getElementById('statusOverride').value = s.statusOverride || "auto";
-        editIdx = i; window.scrollTo(0,0);
-    }
-
-    function duckSecret() {
-        duckCount++;
-        if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
-    }
-
-    document.getElementById('bonusForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
-        await triggerSave(); e.target.reset(); renderBonus();
-    });
-
-    function renderBonus() {
-        const list = document.getElementById('bonusList');
-        list.innerHTML = '';
-        appData.bonus.forEach((b, i) => {
-            list.innerHTML += `<div class="comment-card">
-                ${isAdmin ? `<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>` : ''}
-                <strong>${b.name}</strong> <span style="font-size:0.6rem; opacity:0.5">${b.date}</span><p>"${b.msg}"</p>
-            </div>`;
-        });
-    }
-
+    // --- SYSTEM FUNCS ---
     async function deleteItem(type, i) {
-        if(!confirm("Delete?")) return;
-        if(type === 'daily') appData.daily.splice(i, 1);
-        if(type === 'monthly') appData.students.splice(i, 1);
-        if(type === 'bonus') appData.bonus.splice(i, 1);
-        await triggerSave(); renderAll();
+        if(!confirm("Xóa mục này?")) return;
+        appData[type].splice(i, 1);
+        await triggerSave();
+        renderAll();
     }
 
     function toggleTheme() {
@@ -514,8 +345,28 @@
         document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
 
-    function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
-    document.getElementById('d-date').valueAsDate = new Date();
+    function duckSecret() {
+        alert("Quack! Bạn vừa tìm thấy vịt cứu hộ logic!");
+    }
+
+    function renderAll() { 
+        renderDaily(); 
+        renderWaitlist();
+        renderMonthly();
+    }
+    
+    window.addEventListener('load', () => {
+        loadLocal();
+        if(document.getElementById('d-date')) document.getElementById('d-date').valueAsDate = new Date();
+        if(document.getElementById('w-date')) document.getElementById('w-date').valueAsDate = new Date();
+        
+        document.getElementById('start-btn').style.display = 'block';
+        document.getElementById('start-btn').addEventListener('click', () => {
+             document.getElementById('splash-screen').classList.add('splash-hidden');
+             document.body.classList.add('app-loaded');
+             renderAll();
+        });
+    });
 </script>
 </body>
 </html>
