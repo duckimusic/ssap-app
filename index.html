@@ -23,7 +23,7 @@
 
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 0; margin: 0; overflow-x: hidden; }
         
-        /* --- SPLASH SCREEN --- */
+        /* --- SPLASH SCREEN (KHÔNG ĐỔI) --- */
         #splash-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--splash-bg); display: flex; justify-content: center; align-items: center;
@@ -31,7 +31,7 @@
         }
         .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; display: flex; flex-direction: column; align-items: center; }
         #splash-logo { width: 160px; height: auto; border-radius: 20px; box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); background: white; padding: 10px; }
-        #splash-video { width: 300px; max-width: 85%; height: auto; display: none; margin: 0 auto 15px auto; }
+        #splash-video { width: 300px; max-width: 85%; height: auto; display: block; margin: 0 auto 15px auto; }
         .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
         .loading-bar-mini { width: 100px; height: 2px; background: #333; margin: 20px auto; position: relative; overflow: hidden; }
         .loading-bar-mini::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: loading 2s infinite; }
@@ -180,7 +180,6 @@
 
 <script>
     let appData = { students: [], daily: [], bonus: [], waitlist: [] };
-    let editIdx = null;
 
     // --- CORE ENGINE ---
     async function triggerSave() {
@@ -206,86 +205,7 @@
         renderAll();
     }
 
-    // --- WAITLIST LOGIC ---
-    document.getElementById('waitlistForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const entry = {
-            name: document.getElementById('w-name').value,
-            phone: document.getElementById('w-phone').value,
-            date: document.getElementById('w-date').value || new Date().toISOString().split('T')[0],
-            notes: document.getElementById('w-notes').value
-        };
-        appData.waitlist.unshift(entry);
-        await triggerSave();
-        e.target.reset();
-        document.getElementById('w-date').valueAsDate = new Date();
-        renderWaitlist();
-    });
-
-    function renderWaitlist() {
-        const container = document.getElementById('waitlistContent');
-        if(!container) return;
-        container.innerHTML = '';
-        appData.waitlist.forEach((s, i) => {
-            container.innerHTML += `
-                <div class="student-card waitlist-card">
-                    <button onclick="deleteItem('waitlist', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
-                    <h3 style="margin:0">${s.name}</h3>
-                    <div style="margin: 10px 0;">
-                        📞 <a href="tel:${s.phone}" class="phone-link">${s.phone || 'N/A'}</a>
-                    </div>
-                    <div style="font-size:0.8rem; opacity:0.6;">Ngày đăng ký: ${s.date}</div>
-                    <p style="background:rgba(0,0,0,0.03); padding:10px; border-radius:5px; font-size:0.9rem; white-space: pre-wrap;">${s.notes}</p>
-                </div>`;
-        });
-    }
-
-    // --- MONTHLY LOGIC ---
-    document.getElementById('studentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const entry = {
-            name: document.getElementById('name').value,
-            sti: document.getElementById('sti').value,
-            unit: document.getElementById('unit').value,
-            course: document.getElementById('course').value,
-            overall: document.getElementById('overall').value,
-            statusOverride: document.getElementById('statusOverride').value
-        };
-        appData.students.unshift(entry);
-        await triggerSave();
-        e.target.reset();
-        renderMonthly();
-    });
-
-    function renderMonthly() {
-        const container = document.getElementById('studentList');
-        if(!container) return;
-        container.innerHTML = '';
-        appData.students.forEach((s, i) => {
-            let color = "#607d8b";
-            if(s.statusOverride === 'good') color = "#2e7d32";
-            if(s.statusOverride === 'developing') color = "#f1c40f";
-            if(s.statusOverride === 'support') color = "#e74c3c";
-
-            container.innerHTML += `
-                <div class="student-card">
-                    <button onclick="deleteItem('students', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
-                    <div class="section-label">${s.course} - Unit ${s.unit}</div>
-                    <h3 style="margin:5px 0">${s.name} (STI: ${s.sti})</h3>
-                    <p style="font-size:0.9rem; line-height:1.4;">${s.overall}</p>
-                    <span class="status-badge" style="background:${color}">${s.statusOverride.toUpperCase()}</span>
-                </div>`;
-        });
-    }
-
-    // --- DAILY & XP LOGIC ---
-    function toggleFullLeaderboard() {
-        const list = document.getElementById('full-leaderboard');
-        const btn = document.getElementById('btnViewAll');
-        list.classList.toggle('show');
-        btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
-    }
-
+    // --- FORM LOGIC (DAILY, MONTHLY, WAITLIST) ---
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const entry = {
@@ -303,6 +223,38 @@
         renderDaily();
     });
 
+    document.getElementById('studentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const entry = {
+            name: document.getElementById('name').value,
+            sti: document.getElementById('sti').value,
+            unit: document.getElementById('unit').value,
+            course: document.getElementById('course').value,
+            overall: document.getElementById('overall').value,
+            statusOverride: document.getElementById('statusOverride').value
+        };
+        appData.students.unshift(entry);
+        await triggerSave();
+        e.target.reset();
+        renderMonthly();
+    });
+
+    document.getElementById('waitlistForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const entry = {
+            name: document.getElementById('w-name').value,
+            phone: document.getElementById('w-phone').value,
+            date: document.getElementById('w-date').value || new Date().toISOString().split('T')[0],
+            notes: document.getElementById('w-notes').value
+        };
+        appData.waitlist.unshift(entry);
+        await triggerSave();
+        e.target.reset();
+        document.getElementById('w-date').valueAsDate = new Date();
+        renderWaitlist();
+    });
+
+    // --- RENDER FUNCTIONS ---
     function renderDaily() {
         const list = document.getElementById('dailyList');
         const lbContent = document.getElementById('leaderboard-content');
@@ -323,14 +275,50 @@
         appData.daily.forEach((l, i) => {
             list.innerHTML += `<div class="student-card">
                 <button onclick="deleteItem('daily', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
-                <strong>${l.name}</strong> <span class="xp-badge">${l.xp > 0 ? '+'+l.xp : l.xp} XP</span>
+                <strong>${l.name}</strong> <span class="xp-badge">${l.xp >= 0 ? '+'+l.xp : l.xp} XP</span>
                 <div style="font-size:0.8rem; opacity:0.5">${l.date}</div>
                 <div style="margin-top:5px">${l.notes}</div>
             </div>`;
         });
     }
 
-    // --- SYSTEM FUNCS ---
+    function renderMonthly() {
+        const container = document.getElementById('studentList');
+        if(!container) return;
+        container.innerHTML = '';
+        appData.students.forEach((s, i) => {
+            let color = "#607d8b";
+            if(s.statusOverride === 'good') color = "#2e7d32";
+            if(s.statusOverride === 'developing') color = "#f1c40f";
+            if(s.statusOverride === 'support') color = "#e74c3c";
+            container.innerHTML += `
+                <div class="student-card">
+                    <button onclick="deleteItem('students', ${i})" style="float:right; border:none; background:none;">🗑️</button>
+                    <div class="section-label">${s.course} - Unit ${s.unit}</div>
+                    <h3 style="margin:5px 0">${s.name} (STI: ${s.sti})</h3>
+                    <p style="white-space: pre-wrap;">${s.overall}</p>
+                    <span class="status-badge" style="background:${color}">${s.statusOverride.toUpperCase()}</span>
+                </div>`;
+        });
+    }
+
+    function renderWaitlist() {
+        const container = document.getElementById('waitlistContent');
+        if(!container) return;
+        container.innerHTML = '';
+        appData.waitlist.forEach((s, i) => {
+            container.innerHTML += `
+                <div class="student-card waitlist-card">
+                    <button onclick="deleteItem('waitlist', ${i})" style="float:right; border:none; background:none;">🗑️</button>
+                    <h3 style="margin:0">${s.name}</h3>
+                    <div style="margin: 10px 0;">📞 <a href="tel:${s.phone}" class="phone-link">${s.phone || 'N/A'}</a></div>
+                    <div style="font-size:0.8rem; opacity:0.6;">Ngày: ${s.date}</div>
+                    <p style="background:rgba(0,0,0,0.03); padding:10px; border-radius:5px;">${s.notes}</p>
+                </div>`;
+        });
+    }
+
+    // --- SYSTEM ---
     async function deleteItem(type, i) {
         if(!confirm("Xóa mục này?")) return;
         appData[type].splice(i, 1);
@@ -345,9 +333,13 @@
         document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
 
-    function duckSecret() {
-        alert("Quack! Bạn vừa tìm thấy vịt cứu hộ logic!");
+    function toggleFullLeaderboard() {
+        const list = document.getElementById('full-leaderboard');
+        list.classList.toggle('show');
+        document.getElementById('btnViewAll').innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
+
+    function duckSecret() { alert("Quack! Cứu hộ logic đã có mặt!"); }
 
     function renderAll() { 
         renderDaily(); 
@@ -360,9 +352,15 @@
         if(document.getElementById('d-date')) document.getElementById('d-date').valueAsDate = new Date();
         if(document.getElementById('w-date')) document.getElementById('w-date').valueAsDate = new Date();
         
-        document.getElementById('start-btn').style.display = 'block';
-        document.getElementById('start-btn').addEventListener('click', () => {
-             document.getElementById('splash-screen').classList.add('splash-hidden');
+        // GIỮ NGUYÊN LOGIC KHỞI ĐỘNG CỦA BẠN
+        const startBtn = document.getElementById('start-btn');
+        const splash = document.getElementById('splash-screen');
+        const startupSound = document.getElementById('startup-sound');
+
+        startBtn.style.display = 'block';
+        startBtn.addEventListener('click', () => {
+             startupSound.play().catch(e => console.log("Audio play blocked"));
+             splash.classList.add('splash-hidden');
              document.body.classList.add('app-loaded');
              renderAll();
         });
