@@ -2,81 +2,199 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>SSAP 2.0 | Academic Hub (Fixed)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSAP 2.0 | Home</title>
+
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="/logo.png">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #2e7d32; --accent: #4caf50; --bg: #f4f7f6; --card: #ffffff;
             --text: #2c3e50; --border: #eeeeee; --shadow: rgba(0,0,0,0.08);
             --splash-bg: #000000; --xp-gold: #f1c40f;
         }
+
         [data-theme="dark"] {
             --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333333; --shadow: rgba(0,0,0,0.4);
         }
+
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 0; margin: 0; overflow-x: hidden; }
+
+        /* --- SPLASH SCREEN --- */
         #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--splash-bg); display: flex; justify-content: center; align-items: center;
-            z-index: 9999; transition: opacity 0.8s ease-out, visibility 0.8s; color: white; text-align: center;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--splash-bg);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease-out, visibility 0.8s;
+            color: white; text-align: center;
         }
+
         .logo-container { opacity: 0; transform: translateY(20px); animation: fadeInUp 1s forwards; display: flex; flex-direction: column; align-items: center; }
-        #splash-logo { width: 160px; height: auto; border-radius: 20px; box-shadow: 0 0 20px rgba(255,255,255,0.1); background: white; padding: 10px; }
+        #splash-logo {
+            width: 160px;
+            height: auto;
+            border-radius: 20px; 
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); 
+            background: white; 
+            padding: 10px; 
+        }
         #splash-video { width: 300px; max-width: 85%; height: auto; display: none; margin: 0 auto 15px auto; }
+
         .logo-text { font-size: 2.2rem; font-weight: 200; text-transform: uppercase; letter-spacing: 6px; margin: 0; }
         .loading-bar-mini { width: 100px; height: 2px; background: #333; margin: 20px auto; position: relative; overflow: hidden; }
         .loading-bar-mini::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: loading 2s infinite; }
+
         @keyframes loading { to { left: 100%; } }
         @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
         .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        /* --- TABS --- */
         .nav-tabs { display: flex; background: #000; padding: 10px 20px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .tab-btn { background: transparent; border: none; color: #666; padding: 12px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; transition: 0.2s; }
+        .tab-btn { background: transparent; border: none; color: #666; padding: 12px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
         .tab-btn.active { color: #fff; border-bottom: 2px solid var(--accent); }
-        .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; opacity: 0; transition: opacity 1s ease-in; }
+
+        .container { max-width: 900px; margin: 20px auto; padding: 0 20px; opacity: 0; transition: opacity 1s ease-in; }
         .app-loaded .container { opacity: 1; }
         .page { display: none; }
         .page.active { display: block; }
-        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+
+        /* --- UI COMPONENTS --- */
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .input-card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px var(--shadow); border: 1px solid var(--border); margin-bottom: 30px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .full { grid-column: 1 / -1; }
-        label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.7rem; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; font-family: inherit; }
-        .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; transition: 0.2s; }
-        .btn-add:hover { opacity: 0.9; transform: scale(0.99); }
-        .leaderboard { background: #1a1a1a; color: white; padding: 25px 15px; border-radius: 12px; margin-bottom: 20px; border-bottom: 4px solid var(--xp-gold); text-align: center; }
-        #alien-container { display: flex; justify-content: center; margin-bottom: 10px; }
-        #leaderboard-alien { font-size: 60px; animation: alienFloat 3s ease-in-out infinite; display: inline-block; }
-        @keyframes alienFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
-        .leaderboard-ranks { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; text-align: left; }
-        .rank-card { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--xp-gold); }
-        .view-all-btn { background: transparent; border: 1px solid var(--xp-gold); color: var(--xp-gold); padding: 8px 15px; border-radius: 20px; font-size: 0.7rem; margin-top: 15px; cursor: pointer; transition: 0.3s; }
+        label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.7rem; color: var(--primary); text-transform: uppercase; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
+        .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
+
+        /* --- GAMIFIED LEADERBOARD --- */
+        .leaderboard { 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 25px 15px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            border-bottom: 4px solid var(--xp-gold);
+            text-align: center;
+        }
+
+        #alien-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        #leaderboard-alien {
+            font-size: 60px;
+            animation: alienFloat 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes alienFloat {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+
+        .leaderboard-ranks {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .rank-card {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid var(--xp-gold);
+        }
+
+        /* --- FULL LEADERBOARD STYLES --- */
+        .view-all-btn {
+            background: transparent;
+            border: 1px solid var(--xp-gold);
+            color: var(--xp-gold);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
         .view-all-btn:hover { background: var(--xp-gold); color: #000; }
-        .full-rank-list { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1); text-align: left; }
+
+        .full-rank-list {
+            display: none; 
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            text-align: left;
+        }
         .full-rank-list.show { display: block; }
-        .rank-item-mini { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
-        .xp-badge { background: var(--xp-gold); color: #000; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.7rem; display: inline-block; }
-        .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; transition: 0.2s; }
-        .section-label { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; margin-top: 15px; color: var(--accent); letter-spacing: 0.5px; }
+
+        .rank-item-mini {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+        }
+
+        /* --- XP & CARDS --- */
+        .xp-badge { background: var(--xp-gold); color: #000; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.7rem; }
+        .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
+        .section-label { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; margin-top: 15px; color: var(--accent); }
         .status-badge { font-size: 0.6rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 10px; }
+
+        /* --- DUCK PAGE --- */
         .duck-box { text-align: center; margin-bottom: 20px; }
         #the-duck { font-size: 3.5rem; cursor: pointer; display: inline-block; transition: 0.2s; user-select: none; }
         #the-duck:active { transform: scale(1.3); }
-        .comment-card { background: #fffde7; border-left: 4px solid #fbc02d; padding: 15px; margin-bottom: 10px; border-radius: 4px; color: #333; word-break: break-word; }
-        .search-input { width:100%; padding:10px; border-radius:40px; border:1px solid var(--border); margin-bottom:20px; background: var(--bg); color: var(--text); }
-        .theme-btn { background: var(--card); border: 1px solid var(--border); padding: 5px 15px; border-radius: 20px; cursor: pointer; transition: 0.2s; }
-        .action-icons { display: flex; gap: 12px; align-items: center; }
+        .comment-card { background: #fffde7; border-left: 4px solid #fbc02d; padding: 15px; margin-bottom: 10px; border-radius: 4px; color: #333; }
+
+        .action-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
+        .no-export { display: none !important; }
+
+        /* --- FIXED PRINT STYLES - NO OVERLAP --- */
         @media print {
-            body * { visibility: hidden; }
-            .print-area, .print-area * { visibility: visible; }
-            .print-area { position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 20px; background: white; color: black; display: block; overflow: visible; box-sizing: border-box; z-index: 100000; }
-            .print-area .student-card { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ccc; margin-bottom: 20px !important; display: block; clear: both; overflow: visible; box-shadow: none; background: white; }
-            @page { margin: 1.5cm; size: A4; }
-            .print-area .no-print-date { display: none; }
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white;
+                color: black;
+                display: block;
+                overflow: visible;
+                box-sizing: border-box;
+            }
+            .print-area .student-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                border: 1px solid #ccc;
+                margin-bottom: 20px !important;
+                display: block;
+                clear: both;
+                overflow: visible;
+                page-break-after: avoid;
+            }
         }
     </style>
 </head>
@@ -84,50 +202,54 @@
 
 <div id="splash-screen">
     <div class="logo-container">
-        <img id="splash-logo" src="logo.png" alt="SSAP Logo" onerror="this.src='https://placehold.co/160x160?text=SSAP'">
+        <img id="splash-logo" src="logo.png" alt="SSAP Logo">
         <video id="splash-video" muted playsinline preload="auto">
             <source src="animation.mp4" type="video/mp4">
         </video>
         <h1 class="logo-text">SSAP 2.0</h1>
         <div class="loading-bar-mini" id="loader"></div>
-        <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none;">🚀 Launch</button>
+        <button id="start-btn" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 20px; display: none;">Tap to start</button>
     </div>
 </div>
 
 <audio id="startup-sound" src="startup.mp3"></audio>
 
 <nav class="nav-tabs">
-    <button class="tab-btn active" data-page="daily">📅 Daily XP</button>
-    <button class="tab-btn" data-page="monthly">📊 Monthly SSAP</button>
-    <button class="tab-btn" data-page="bonus">🦆 Bonus Wall</button>
+    <button class="tab-btn active" onclick="showPage('daily')">📅 Daily</button>
+    <button class="tab-btn" onclick="showPage('monthly')">📊 Monthly SSAP</button>
+    <button class="tab-btn" onclick="showPage('bonus')">🦆 Bonus</button>
 </nav>
 
 <div class="container">
     <div class="header-box">
         <h2 style="margin:0; font-weight: 300;">SSAP <span style="color:var(--primary); font-weight: 800;">2.0</span></h2>
-        <button class="theme-btn" onclick="toggleTheme()" id="themeText">🌙 Dark</button>
+        <button class="theme-btn" onclick="toggleTheme()" id="themeText" style="background: var(--card); border: 1px solid var(--border); padding: 5px 15px; border-radius: 20px; cursor: pointer;">🌙 Dark</button>
     </div>
 
     <div id="page-daily" class="page active">
         <div class="leaderboard" id="xpLeaderboard">
              <div id="alien-container"><span id="leaderboard-alien">👾</span></div>
              <div id="leaderboard-content">🏆 XP Leaderboard: Loading...</div>
+
              <button class="view-all-btn" onclick="toggleFullLeaderboard()" id="btnViewAll">View Full Rankings</button>
              <div id="full-leaderboard" class="full-rank-list"></div>
         </div>
+
         <div class="input-card">
             <form id="dailyForm">
                 <div class="form-grid">
-                    <div><label>Student Name</label><input type="text" id="d-name" required placeholder="Full name"></div>
-                    <div><label>STI ID</label><input type="text" id="d-sti" placeholder="STI123"></div>
+                    <div><label>Name</label><input type="text" id="d-name" required></div>
+                    <div><label>STI</label><input type="text" id="d-sti"></div>
                     <div><label>Date</label><input type="date" id="d-date"></div>
-                    <div class="full"><label>XP Change (+/-)</label><input type="text" inputmode="decimal" id="d-xp" value="0" placeholder="e.g., +10 or -5"></div>
-                    <div class="full"><label>Notes / Behavior</label><textarea id="d-notes" rows="2" placeholder="Participation, homework, etc."></textarea></div>
+                    <div class="full"><label>XP Change (+/-)</label><input type="text" inputmode="decimal" id="d-xp" value="0"></div>
+                    <div class="full"><label>Notes / Behavior</label><textarea id="d-notes" rows="2"></textarea></div>
                 </div>
-                <button type="submit" class="btn-add">📌 Log Daily Activity</button>
+                <button type="submit" class="btn-add">Log Daily Activity</button>
             </form>
         </div>
-        <input type="text" id="searchDaily" class="search-input" placeholder="🔍 Filter daily entries by name / STI..." oninput="renderDaily()">
+        <div class="form-grid" style="margin-bottom: 20px;">
+            <input type="text" id="searchDaily" placeholder="Filter by name/STI..." oninput="renderDaily()">
+        </div>
         <div id="dailyList"></div>
     </div>
 
@@ -135,49 +257,51 @@
         <div class="input-card">
             <form id="studentForm">
                 <div class="form-grid">
-                    <div><label>Full Name</label><input type="text" id="name" required></div>
-                    <div><label>STI Code</label><input type="text" id="sti"></div>
-                    <div><label>Unit / Class</label><input type="text" id="unit"></div>
+                    <div><label>Name</label><input type="text" id="name" required></div>
+                    <div><label>STI</label><input type="text" id="sti"></div>
+                    <div><label>Unit</label><input type="text" id="unit"></div>
                     <div class="full"><label>Course</label><input type="text" id="course"></div>
-                    <div class="full"><label>Listening & Speaking</label><textarea id="ls" rows="2" placeholder="Observations / scores"></textarea></div>
-                    <div class="full"><label>Reading & Writing</label><textarea id="rw" rows="2" placeholder="Progress notes"></textarea></div>
-                    <div class="full"><label>Overall Assessment</label><textarea id="overall" rows="2" placeholder="Final comments"></textarea></div>
+                    <div class="full"><label>L & S</label><textarea id="ls" rows="2"></textarea></div>
+                    <div class="full"><label>R & W</label><textarea id="rw" rows="2"></textarea></div>
+                    <div class="full"><label>Overall</label><textarea id="overall" rows="2"></textarea></div>
                     <div class="full">
                         <select id="statusOverride">
-                            <option value="auto">🤖 Auto-Detect (based on overall text)</option>
+                            <option value="auto">🤖 Auto-Detect</option>
                             <option value="good">🟢 Excelling</option>
                             <option value="developing">🟡 Developing</option>
                             <option value="support">🔴 Support Needed</option>
                         </select>
                     </div>
                 </div>
-                <button type="submit" id="submitBtn" class="btn-add">💾 Save Monthly Record</button>
+                <button type="submit" id="submitBtn" class="btn-add">Save Monthly Record</button>
             </form>
         </div>
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name / STI..." oninput="renderMonthly()">
+        <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
 
-        <div class="input-card" id="pdfExportCard" style="margin-top: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                <label style="margin:0; font-size: 1rem;">📑 Generate Student Report (PDF)</label>
-                <button id="refreshStudentListBtn" style="background: var(--accent); border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-weight: bold;">⟳ Refresh List</button>
+        <!-- EXPORT PDF SECTION (fixed overlap) -->
+        <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
+                <button id="refreshStudentListBtn" style="background: var(--accent); border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer;">⟳ Refresh List</button>
             </div>
-            <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 10px; border-radius: 12px;"></select>
-            <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">📄 Export Selected to PDF (Clean Print)</button>
-            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 12px;">💡 Tip: Hold Ctrl (Windows) / Cmd (Mac) to select multiple students → click export → choose "Save as PDF". No date stamp, zero overlap.</p>
+            <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 8px;">
+            </select>
+            <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">Export Selected to PDF (Print)</button>
+            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students → click button → choose "Save as PDF".</p>
         </div>
     </div>
 
     <div id="page-bonus" class="page">
         <div class="duck-box">
             <div id="the-duck" onclick="duckSecret()">🦆</div>
-            <p style="font-size:0.6rem; opacity:0.6">Quack 8 times for admin mode 🔓</p>
+            <p style="font-size:0.6rem; opacity:0.5">This duck quacks 8 times!</p>
         </div>
         <div class="input-card">
             <form id="bonusForm">
-                <label>Student Name</label><input type="text" id="b-name" required placeholder="Name">
-                <label style="margin-top: 12px;">💬 English Note / Q&A</label><textarea id="b-msg" rows="3" placeholder="Shoutout, encouragement, or note..."></textarea>
-                <button type="submit" class="btn-add" style="background:#f1c40f; color:#000;">✍️ Post to Wall</button>
+                <label>Student Name</label><input type="text" id="b-name" required><br><br>
+                <label>Q&A / English Note</label><textarea id="b-msg" rows="3"></textarea>
+                <button type="submit" class="btn-add" style="background:#f1c40f; color:#000;">Post to Wall</button>
             </form>
         </div>
         <div id="bonusList"></div>
@@ -190,13 +314,14 @@
     let duckCount = 0;
     let isAdmin = false;
 
+    window.addEventListener('online', () => { initApp(); });
+    window.addEventListener('offline', () => { console.warn("Offline"); });
+
     async function syncCloud(method, data = null) {
-        try {
-            const options = { method, headers: { 'Content-Type': 'application/json' } };
-            if (data) options.body = JSON.stringify(data);
-            const res = await fetch('/api/data', options);
-            return method === 'GET' ? await res.json() : null;
-        } catch(e) { return null; }
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
+        if (data) options.body = JSON.stringify(data);
+        const res = await fetch('/api/data', options);
+        return method === 'GET' ? await res.json() : null;
     }
 
     async function initApp() {
@@ -234,36 +359,27 @@
         const audio = document.getElementById('startup-sound');
         document.getElementById('loader').style.display = 'none';
         startBtn.style.display = 'inline-block';
-        startBtn.onclick = () => {
-            audio.play().catch(e=>{});
+
+        startBtn.addEventListener('click', () => {
+            audio.play().catch(e => {}); 
             logo.style.display = 'none';
             document.querySelector('.logo-text').style.display = 'none';
             video.style.display = 'block';
             video.play().catch(e => hideSplash());
             startBtn.style.display = 'none';
-            video.onended = hideSplash;
-            setTimeout(hideSplash, 4500);
-            initApp();
-        };
+            video.onended = hideSplash; 
+            setTimeout(hideSplash, 5000); 
+            initApp(); 
+        });
     });
 
-    // FIXED: showPage with event parameter
-    function showPage(pageId, ev) {
+    function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
-        if (ev && ev.currentTarget) ev.currentTarget.classList.add('active');
-        else {
-            const btn = document.querySelector(`.tab-btn[data-page="${pageId}"]`);
-            if (btn) btn.classList.add('active');
-        }
-        if (pageId === 'monthly') setTimeout(populateStudentSelect, 60);
+        event.currentTarget.classList.add('active');
         renderAll();
     }
-
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => showPage(btn.getAttribute('data-page'), e));
-    });
 
     function toggleFullLeaderboard() {
         const list = document.getElementById('full-leaderboard');
@@ -274,19 +390,18 @@
 
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const xpVal = parseInt(document.getElementById('d-xp').value) || 0;
+        const xpInput = document.getElementById('d-xp').value;
         const entry = {
             name: document.getElementById('d-name').value.trim(),
             sti: document.getElementById('d-sti').value,
             date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
-            xp: xpVal,
+            xp: parseInt(xpInput) || 0,
             notes: document.getElementById('d-notes').value
         };
         appData.daily.unshift(entry);
-        await triggerSave();
-        e.target.reset();
+        await triggerSave(); 
+        e.target.reset(); 
         document.getElementById('d-xp').value = "0";
-        document.getElementById('d-date').valueAsDate = new Date();
         renderDaily();
     });
 
@@ -296,393 +411,216 @@
         const fullLeaderboardUI = document.getElementById('full-leaderboard');
         const search = document.getElementById('searchDaily').value.toLowerCase();
         list.innerHTML = '';
+
         const totals = {};
         appData.daily.forEach(l => { totals[l.name] = (totals[l.name] || 0) + l.xp; });
         const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
         const top = allSorted.slice(0,3);
+
         if(top.length > 0) {
-            leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">✨ TOP PERFORMERS ✨</div>
-                <div class="leaderboard-ranks">${top.map((t,i)=>`<div class="rank-card"><span>${i+1}. ${escapeHtml(t[0])}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
-            fullLeaderboardUI.innerHTML = allSorted.map((t,i)=>`<div class="rank-item-mini"><span>${i+1}. ${escapeHtml(t[0])}</span><span style="color:var(--xp-gold);">${t[1]} XP</span></div>`).join('');
+            leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">TOP PERFORMERS</div>
+                <div class="leaderboard-ranks">${top.map((t,i)=>`<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
+            fullLeaderboardUI.innerHTML = allSorted.map((t,i)=>`<div class="rank-item-mini"><span>${i+1}. ${t[0]}</span><span style="color:var(--xp-gold);">${t[1]} XP</span></div>`).join('');
         } else {
-            leaderboardUI.innerHTML = "🏆 No XP entries yet. Log daily activity!";
+            leaderboardUI.innerHTML = "🏆 No XP data yet.";
             fullLeaderboardUI.innerHTML = "";
         }
+
         appData.daily.forEach((l, i) => {
-            if(!l.name.toLowerCase().includes(search) && !l.sti.toLowerCase().includes(search)) return;
+            if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
             const xpSign = l.xp > 0 ? '+' : '';
-            list.innerHTML += `<div class="student-card"><div style="display:flex; justify-content:space-between;"><strong>${escapeHtml(l.name)}</strong> <button onclick="deleteItem('daily', ${i})" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🗑️</button></div>
-                <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
-                <div style="font-size:0.75rem; opacity:0.7; margin-top:5px;">📅 ${escapeHtml(l.date)}</divHtml(l.date)}</div><div><div>>📝 ${📝 ${escapeHtml(l.notes)}escapeHtml(l.notes)}</div</div></div></div>`;
-       >`;
+            list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" style="float:right; background:none; border:none;">🗑️</button>
+                <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
+                <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${l.notes}</div></div>`;
         });
     }
 
-    function });
-    }
-
-    function getStatus getStatus(txt(txt,, override) override) {
-        if (override !== " {
-        if (override !== "auto")auto") {
-            {
-            const map = { const map = { good: good: ["Excelling", ["Excelling", "#2 "#2e7d32e7d32"], developing"], developing: [": ["Developing", "#ffDeveloping", "#ffa000"], supporta000"], support: [": ["Support NeededSupport Needed", "#", "#d32d32f2f2f"]f"] };
-            return { };
-            return { label: map label: map[override[override][0],][0], color: color: map map[override[override][1]][1] };
-        };
+    function getStatus(txt, override) {
+        if (override !== "auto") {
+            const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
+            return { label: map[override][0], color: map[override][1] };
         }
-        }
-        const t const t = ( = (txt ||txt || "").to "").toLowerCaseLowerCase();
-       ();
-        if ( if (["t["tốtốt", "", "vượt trội",vượt trội", "good "good", "", "excellentexcellent", "", "advanced"].advanced"].some(wsome(w => t => t.includes(w))) return { label: ".includes(w))) return { label: "ExcellingExcelling", color: "#", color: "#2e2e7d32"7d32" };
-        };
-        if ([" if (["yyếu",ếu", "c "cầnần hỗ tr hỗ trợợ", "support",", "support", "weak "weak", "strugg", "struggling"].ling"].some(w =>some(w => t t.includes(w.includes(w))) return))) return { label { label: ": "Support Needed", color: "#Support Needed", color: "#d32d32f2f"f2f" };
-        };
-        return { label: return { label: "Developing "Developing", color: "#", color: "#ffa000"ffa000" };
+        const t = (txt || "").toLowerCase();
+        if (["tốt", "vượt trội", "good", "excellent"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
+        if (["yếu", "cần hỗ trợ", "support", "weak"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
+        return { label: "Developing", color: "#ffa000" };
     }
 
-    };
-    }
-
-    document.getElementById document.getElementById('studentForm').('studentForm').addEventListeneraddEventListener('submit',('submit', async (e async (e) =>) => {
-        e.preventDefault {
+    document.getElementById('studentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-       ();
-        const data const data = {
-            name = {
-            name: document: document.getElementById('.getElementById('name').value,name').value, sti: document sti: document.getElementById('.getElementById('sti').sti').value,
-            unitvalue,
-            unit: document.getElementById: document.getElementById('unit').('unit').value,value, course: document.getElementById course: document.getElementById('course('course').value').value,
-            ls: document.getElementById('ls').value, rw:,
-            ls: document.getElementById('ls').value, rw: document.getElementById document.getElementById('rw('rw').value').value,
-            overall,
-            overall: document.getElementById: document.getElementById('overall').('overall').value, statusOverride: documentvalue, statusOverride: document.getElementById('.getElementById('statusOverridestatusOverride').value').value
-       
+        const data = {
+            name: document.getElementById('name').value, sti: document.getElementById('sti').value,
+            unit: document.getElementById('unit').value, course: document.getElementById('course').value,
+            ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
+            overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value
         };
-        };
-        if (editIdx if (editIdx !== null !== null) {) { appData appData.stud.students[editents[editIdx]Idx] = data = data; editIdx =; editIdx = null; null; } } 
-        else { appData.st 
-        else { appData.studentsudents.unshift.unshift(data);(data); }
-        }
-        await trigger await triggerSaveSave();
-        e();
-        e.target.reset.target.reset(); render(); renderMonthly(); populateStudentMonthly(); populateStudentSelectSelect();
-   ();
+        if (editIdx !== null) { appData.students[editIdx] = data; editIdx = null; } 
+        else { appData.students.unshift(data); }
+        await triggerSave();
+        e.target.reset(); renderMonthly();
     });
 
-    function });
-
-    function renderMonthly renderMonthly()() {
-        const {
-        const list = document.getElementById(' list = document.getElementById('studentstudentListList');
-        const');
-        const search = search = document.getElementById document.getElementById('search('searchInput').value.toLowerCaseInput').();
-       value.toLowerCase();
-        list.innerHTML list.innerHTML = = '';
-        app '';
-        appData.stData.studentsudents.forEach((s,.forEach((s, i) i) => => {
-            if {
-            if (!s (!s.name.toLowerCase.name.toLowerCase().includes().includes(search) && !s.st(search) && !i.toLowerCases.sti.toLowerCase().includes().includes(search(search)))) return return;
-            const;
-            const status = status = getStatus getStatus(s.overall(s.overall, s, s.statusOverride.statusOverride || " || "autoauto");
-            list.innerHTML +=");
-            list.innerHTML += `<div class="student-card `<div class="student-card">
-               ">
-                <div <div style=" style="display:display:flex;flex; justify-content justify-content:space-between:space-between;"><h3>${;"><h3>${escapeHtmlescapeHtml(s.name(s.name)})} <span <span style="opacity: style="op0.acity:6; font0.6;-size:0 font-size.8:0.8rem;">#${escapeHtml(s.sti||rem;">#${escapeHtml(s.sti||'N'N/A')/A')}</span}</span></></hh33>
-                <div class>
-                <div class="action="action-icons"><span onclick-icons"><span onclick="delete="deleteItem('monthlyItem('monthly', ${', ${i})i})" style" style="cursor="cursor:pointer; font:pointer; font-size:-size:1.1.2rem2rem;">;">🗑️🗑️</span></span <span onclick="edit> <span onclick="editStudent($Student(${i{i})"})" style=" style="cursor:cursor:pointer; font-sizepointer; font-size:1.2rem;">:1.2rem;">✏✏️</span></️</span></div></div></div>
-                ${div>
-                ${s.s.unit ? `<divunit ? `<div><strong><strong>Unit>Unit:</strong> ${:</strong> ${escapeHtml(s.escapeHtml(s.unit)}</div>` : ''}
-                ${s.cunit)}</div>` : ''}
-                ${s.course ?ourse ? `<div><strong `<div><strong>Course:</strong>Course:</strong> ${> ${escapeHtml(s.cescapeHtml(s.course)}ourse)}</div>` :</div>` : '' ''}
-               }
-                <div class <div class="section-label">="section-label">🎧🎧 Listening & Listening & Speaking</ Speaking</div><div>div><div>${escape${escapeHtml(s.lsHtml(s.ls||'—')||'—')}</div}</div>
-                <>
-                <divdiv class="section-label class="section-label">📖 Reading">📖 Reading & Writing & Writing</div><div</div><div>${>${escapeHtml(s.rescapeHtml(s.rw||'—')}</w||'—')}</divdiv>
-                <div class>
-                <div="section class-label">📌="section-label">📌 Overall</ Overall</divdiv><div>><div>${escape${escapeHtml(sHtml(s.overall||.overall||'—')}</'—div')}</div>
-               >
-                <div class <div class="status-badge="status-badge" style="background" style="background:${:${status.colorstatus.color}">}">${status${status.label}</.label}</divdiv>
-            </div>>
+    function renderMonthly() {
+        const list = document.getElementById('studentList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        list.innerHTML = '';
+        appData.students.forEach((s, i) => {
+            if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
+            const status = getStatus(s.overall, s.statusOverride || "auto");
+            list.innerHTML += `<div class="student-card">
+                <div style="display:flex; justify-content:space-between;"><h3>${escapeHtml(s.name)} <span style="opacity:0.5;">#${escapeHtml(s.sti||'000')}</span></h3>
+                <div><span onclick="deleteItem('monthly', ${i})" style="cursor:pointer;">🗑️</span> <span onclick="editStudent(${i})" style="cursor:pointer;">⋮</span></div></div>
+                <div class="section-label">Listening & Speaking</div><div>${escapeHtml(s.ls||'N/A')}</div>
+                <div class="section-label">Reading & Writing</div><div>${escapeHtml(s.rw||'N/A')}</div>
+                <div class="section-label">Overall</div><div>${escapeHtml(s.overall||'N/A')}</div>
+                <div class="status-badge" style="background:${status.color}">${status.label}</div>
             </div>`;
-       `;
         });
     }
 
+    function editStudent(i) {
+        const s = appData.students[i];
+        document.getElementById('name').value = s.name; document.getElementById('sti').value = s.sti;
+        document.getElementById('unit').value = s.unit; document.getElementById('course').value = s.course;
+        document.getElementById('ls').value = s.ls; document.getElementById('rw').value = s.rw;
+        document.getElementById('overall').value = s.overall;
+        document.getElementById('statusOverride').value = s.statusOverride || "auto";
+        editIdx = i; window.scrollTo(0,0);
+    }
+
+    function duckSecret() {
+        duckCount++;
+        if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
+    }
+
+    document.getElementById('bonusForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
+        await triggerSave(); e.target.reset(); renderBonus();
     });
-    }
 
-    function editStudent(i function editStudent(i)) {
-        const {
-        const s = appData.stud s = appData.students[ients[i];
-       ];
-        document.getElementById document.getElementById('name('name').value = s').value = s.name;.name; document.getElementById('sti document.getElementById('sti').value').value = s = s.sti;
-       .sti;
-        document.getElementById document.getElementById('unit').value('unit').value = s = s.unit; document.unit; document.getElementById('.getElementById('course').value =course').value = s.course s.course;
-        document;
-        document.getElementById('.getElementById('ls').value = s.lls').value = s.ls;s; document.getElementById document.getElementById('rw('rw').value').value = s = s.rw.rw;
-        document.getElementById(';
-        document.getElementByIdoverall').('overall').value =value = s. s.overalloverall;
-       ;
-        document.getElementById document.getElementById('statusOverride').('statusOverride').value =value = s.status s.statusOverride ||Override || "auto "auto";
-       ";
-        editIdx editIdx = i; window.scroll = i; window.scrollTo({To({top:top: 0 0, behavior: 'smooth', behavior: 'smooth'});
-   });
-    }
-
-    function }
-
-    function duckSecret duckSecret()() {
-        duck {
-        duckCountCount++;
-        if(du++;
-        if(duckCountckCount ===  === 8)8) { isAdmin { isAdmin = !is = !isAdmin;Admin; alert(is alert(isAdmin ?Admin ? " "🔓 ADMIN🔓 ADMIN MODE MODE ACTIVATED — delete icons visible ACTIVATED — delete icons visible on bonus on bonus wall" : " wall" : "🔒🔒 ADMIN MOD ADMIN MODE DEE DEACTIVACTIVATED"); duckCountATED"); duckCount = 0; renderBonus = 0;(); }
-    renderBonus(); }
-
-    document }
-   .getElementById(' }
-
-    documentbonusForm')..getElementById('bonusForm').addEventListeneraddEventListener('submit', async('submit', async (e (e) => {
-       ) => {
-        e.preventDefault e.preventDefault();
-        app();
-        appDataData.bon.bonus.unus.unshift({ name: document.getElementByIdshift({ name: document.getElementById('b-name').('b-name').value,value, msg: document.getElementById msg: document.getElementById('b('b-msg').value-msg').value, date, date: new: new Date(). Date().toLocaletoLocaleString()String() });
+    function renderBonus() {
+        const list = document.getElementById('bonusList');
+        list.innerHTML = '';
+        appData.bonus.forEach((b, i) => {
+            list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>`:''}
+                <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem;">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p></div>`;
         });
-        await trigger await triggerSave();Save(); e.target.reset(); e.target.reset(); renderBonus renderBonus();
-    });
-
-   ();
-    });
-
-    function render function renderBonus() {
-       Bonus() {
-        const list const list = document = document.getElementById('bonus.getElementById('bonusList');
-        listList');
-        list.innerHTML =.innerHTML = '';
-        appData '';
-       .bon appData.bonus.forEachus.forEach((b, i((b, i) =>) => {
-            list.innerHTML {
-            list.innerHTML += += `<div class `<div class="comment="comment-card">-card">${is${isAdmin?Admin?``<button onclick<button onclick="deleteItem('="deleteItem('bonusbonus', ${i})" style="float:right; background:none; border:none; cursor', ${i})" style="float:right; background:none; border:none; cursor:pointer:pointer; font; font-size:-size:1rem1rem;">;">❌</❌</button>`button>`:'':''}
-               }
-                <strong <strong>${escape>${escapeHtmlHtml(b.name(b.name)}</)}</strong> <spanstrong> <span style=" style="font-sizefont-size:0:0.6.6rem;rem; opacity: opacity:0.0.6;">6;">📅 ${escape📅 ${escapeHtml(bHtml(b.date)}.date)}</span</span><p>💬 "${escapeHtml(b.msg)}><p>💬 "${escapeHtml(b.msg)}"</"</p></p></div>div>`;
-       `;
-        });
-    });
     }
 
+    async function deleteItem(type, i) {
+        if(!confirm("Delete?")) return;
+        if(type === 'daily') appData.daily.splice(i, 1);
+        if(type === 'monthly') appData.students.splice(i, 1);
+        if(type === 'bonus') appData.bonus.splice(i, 1);
+        await triggerSave(); renderAll();
     }
 
-    async function async function deleteItem deleteItem(type,(type, i) {
-        i) if(! {
-        if(!confirm("Delete this entry permanentlyconfirm("Delete this entry permanently?"))?")) return return;
-        if;
-        if(type ===(type === 'daily') appData.d 'daily') appData.daily.saily.splice(iplice(i, , 11);
-        if);
-        if(type ===(type === 'month 'monthly')ly') appData appData.stud.students.sents.splice(i, plice(i, 1);
-        if1(type ===);
-        if(type === 'bonus') appData 'bonus') appData.bon.bonus.splice(ius.splice(i, , 1);
-        await1);
-        await triggerSave triggerSave(); render(); renderAll();All(); if(type if(type === ' === 'monthlymonthly') populateStudentSelect') populateStudentSelect();
-   ();
+    function toggleTheme() {
+        const isLight = document.body.getAttribute('data-theme') === 'light';
+        document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+        document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
 
+    function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
+    document.getElementById('d-date').valueAsDate = new Date();
+
+    // ======================= FIXED EXPORT PDF (NO OVERLAP, NO DATE) =======================
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
     }
 
-    function toggle function toggleTheme()Theme() {
-        {
-        const isLight = const isLight = document.body document.body.getAttribute.getAttribute('data('data-theme-theme') === 'light') === 'light';
-        document.body';
-        document.body.setAttribute.setAttribute('data-theme('data-theme', is', isLight ?Light ? 'dark 'dark' :' : 'light');
-        'light');
-        document.getElementById('themeText').innerText = is document.getElementById('themeText').innerText = isLight ? "Light ? "☀️☀️ Light" Light" : " : "🌙🌙 Dark Dark";
-   ";
-    }
-
-    function }
-
-    function renderAll renderAll() { renderDaily() { renderDaily(); render(); renderMonthly(); renderBonusMonthly(); renderBonus(); }
-    document.getElementById('d-date').value(); }
-    document.getElementById('d-date').valueAsDateAsDate = new = new Date Date();
-
-    function escapeHtml();
-
-    function(str) escapeHtml(str) { if { if (! (!str) returnstr) return ''; ''; return String(str). return String(str).replace(/replace(/[&[&<>]/<>]/g,g, m => m => ({ ' ({ '&':'&':'&amp&amp;',;', '<':' '<':'&lt;&lt',;', '>':'& '>':'&gt;' }gt;' }[m[m])); }
-
-   ])); }
-
-    function populate function populateStudentSelect()StudentSelect() {
-        const {
-        const select = select = document.getElementById('student document.getElementById('studentSelectForSelectForPdfPdf');
-       ');
-        if (! if (!select) returnselect) return;
-        select;
+    function populateStudentSelect() {
+        const select = document.getElementById('studentSelectForPdf');
+        if (!select) return;
         select.innerHTML = '';
-       .innerHTML = '';
-        appData appData.stud.students.forEachents.forEach((student, idx) => {
+        appData.students.forEach((student, idx) => {
             const option = document.createElement('option');
             option.value = idx;
-            option.textContent = `${((student, idx) => {
-            const option = document.createElement('option');
-            option.value = idx;
-            option.textContent = `${student.namestudent.name} (${student} (${student.sti.sti || 'No ST || 'No STI'})I'})`;
-            select`;
-            select.appendChild(.appendChild(optionoption);
-       );
+            option.textContent = `${student.name} (${student.sti || 'No STI'})`;
+            select.appendChild(option);
         });
-        if });
-        if (app (appData.stData.studentsudents.length ===.length === 0 0)) {
-            const {
-            const option = option = document.createElement document.createElement('option');
-           ('option');
-            option.text option.textContent = 'Content =📭 No '📭 No students registered students registered';
-            option.dis';
+        if (appData.students.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = 'No students yet';
             option.disabled = true;
-            selectabled = true;
-            select.appendChild(.appendChild(option);
-       option);
+            select.appendChild(option);
         }
     }
-    }
 
-    // FIX }
-
-    // FIXED PDF EXPORTED PDF: no EXPORT overlap, no: no overlap, date
-    no date function export
-    function exportToPDFViaPrintToPDF()ViaPrint {
-        const select =() {
-        const document.getElementById select = document.getElementById('studentSelectFor('studentPdfSelectForPdf');
-        const selected');
-       Indices const selectedIndices = Array = Array.from(.from(select.selectedselect.selectedOptions).Options).map(map(opt =>opt => parseInt( parseInt(opt.value));
-       opt.value if ());
-        if (selectedIndselectedIndices.length === ices.length === 0)0) { alert { alert('('PleasePlease select at select at least one least one student from student from the list the list.'); return;.'); return; }
+    function exportToPDFViaPrint() {
+        const select = document.getElementById('studentSelectForPdf');
+        const selectedIndices = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+        if (selectedIndices.length === 0) {
+            alert('Please select at least one student.');
+            return;
         }
-        const students const studentsToExportToExport = selectedIndices.map(i => app = selectedIndices.map(i => appData.stData.students[i]).udents[i]).filter(s => s);
-        if (filter(s => s);
-        if (studentsTostudentsToExport.lengthExport.length ===  === 0)0) return return;
+        const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
+        if (studentsToExport.length === 0) return;
 
-        const printDiv;
-
-        const printDiv = document = document.createElement('div.createElement('div');
-        print');
-        printDiv.classDiv.className =Name = 'print 'print-area-area';
-        print';
-        printDiv.styleDiv.style.position.position = = 'absolute 'absolute';
-        printDiv.style.top';
-        printDiv.style.top = ' = '00';
-        print';
-        printDiv.styleDiv.style.left =.left = '0 '0';
-        printDiv.style.width';
-        printDiv = '.style.width = '100%100%';
-       ';
-        printDiv printDiv.style.backgroundColor.style.backgroundColor = ' = 'whitewhite';
-        print';
-        printDiv.style.padding =Div.style.padding '25px = '';
-       25px';
- printDiv.style.box        printDivSizing.style.box = 'Sizing = 'border-box';
-       border-box';
-        print printDivDiv.style.z.style.zIndex =Index = '999 '9999999';
-
-        const title =';
+        // Create print container
+        const printDiv = document.createElement('div');
+        printDiv.className = 'print-area';
+        printDiv.style.position = 'absolute';
+        printDiv.style.top = '0';
+        printDiv.style.left = '0';
+        printDiv.style.width = '100%';
+        printDiv.style.backgroundColor = 'white';
+        printDiv.style.padding = '20px';
+        printDiv.style.boxSizing = 'border-box';
+        printDiv.style.zIndex = '99999';
 
         const title = document.createElement('h1');
-        title.textContent = ' document.createElement('h1');
-        title.textContent = '📘📘 SSAP 2 SSAP 2.0.0 - Student - Student Academic Report Academic Report';
-       ';
-        title.style title.style.textAlign.textAlign = ' = 'centercenter';
-        title.style';
-        title.style.color.color = '# = '#2e7d2e7d3232';
-        title.style.b';
-        title.style.borderBottomorderBottom = '2 = '2px solid #px solid #4c4caf50';
-       af50';
-        title.style.p title.styleaddingBottom =.paddingBottom = '12 '12pxpx';
-        title.style.marginBottom = '';
-        title.style.marginBottom = '30px30px';
-';
-               title.style title.style.fontSize = '.fontSize = '24px';
-       24px';
-        printDiv printDiv.appendChild(title);
+        title.textContent = 'SSAP 2.0 - Student Report';
+        title.style.textAlign = 'center';
+        title.style.color = '#2e7d32';
+        title.style.marginBottom = '30px';
+        printDiv.appendChild(title);
 
-       .appendChild(title);
+        studentsToExport.forEach(student => {
+            const status = getStatus(student.overall, student.statusOverride || "auto");
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.style.background = '#fff';
+            card.style.border = '1px solid #ccc';
+            card.style.borderRadius = '12px';
+            card.style.padding = '20px';
+            card.style.marginBottom = '20px';
+            card.style.pageBreakInside = 'avoid';
+            card.style.breakInside = 'avoid';
+            card.style.display = 'block';
+            card.style.clear = 'both';
+            card.style.overflow = 'visible';
 
-        studentsTo studentsToExport.forEach(student =>Export.forEach(student => {
-            {
-            const status const status = get = getStatus(studentStatus(student.over.overall, student.statusall, student.statusOverride ||Override || "auto "auto");
-            const card");
-            const card = document = document.createElement('div.createElement('div');
-            card');
-            card.className = '.className = 'student-cardstudent-card';
-           ';
-            card.style.background card.style.background = '#fff = '#fff';
-            card';
-            card.style.b.style.borderorder = '1 = '1px solidpx solid #ddd';
-            #ddd';
-            card.style card.style.border.borderRadius =Radius = '16 '16px';
-            card.style.padding =px';
-            card.style.padding = '20 '20px';
-            cardpx';
-            card.style.m.style.marginBottomarginBottom = ' = '25px25px';
-           ';
-            card.style card.style.pageBreakInside =.pageBreak 'avoidInside = 'avoid';
-            card.style';
-           .break card.style.breakInside = 'avoidInside =';
-            'avoid';
-            card.style card.style.boxShadow = '.boxShadow0  = '0 2px 62pxpx rgba 6px rgba(0,0(0,0,0,0,0,0.05.05))';
-            card';
-            card.innerHTML.innerHTML = `
-                <div = `
-                <div style=" style="display:flex;display:flex; justify-content justify-content:space:space-between; align-items-between; align-items:bas:baseline;eline; flex-wrap flex-wrap:wrap:wrap;; margin-bottom:12px margin-bottom:12px;">
-                   ;">
-                    <h <h2 style2 style="margin="margin:0:0; font-size:; font-size:1.1.6rem6rem;">;">${${escapeHtml(student.name)}escapeHtml(student.name)} <span style <span style="font="font-size:0.-size:0.9rem9rem; color; color:#555:#555;">#;">#${escape${escapeHtml(studentHtml(student.sti || '.sti || '000')}</span000')}</span></h></h2>
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                    <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5;">#${escapeHtml(student.sti || '000')}</span></h3></div>
                 </div>
-                ${2>
-                </div>
-                ${student.unit ?student.unit ? `<div `<div><strong><strong>Unit>Unit/Class/Class:</strong:</strong> ${escapeHtml> ${escapeHtml(student.(student.unit)}</divunit)}</div>` :>` : ''}
-                ${ ''}
-                ${student.cstudent.course ? `<divourse ? `<div><strong><strong>Course:</strong> ${>Course:</strong> ${escapeHtml(studentescapeHtml.course)}(student.course)}</div</div>` : ''>` : ''}
-               }
-                <div style="margin <div style="margin-top:-top: 12px 12;"><spanpx;"><span style style="font-weight:800;="font-weight:800; color:# color:#2e7d2e7d32;">32;">🎧 LISTEN🎧 LISTENING &ING & SPEAKING</ SPEAKING</spanspan><br>><br>${escapeHtml(student${escapeHtml(student.ls.ls || 'No data || 'No data')}</')}</div>
-               div>
-                <div style <div style="margin-top:="margin-top 12: 12pxpx;"><span style="font;"><span style="font-weight:-weight:800;800; color:# color:#2e7d2e7d32;">32;">📖📖 READING & WRITING</span><br READING & WRITING</span>${><br>${escapeHtmlescapeHtml(student.rw ||(student.rw || 'No 'No data')}</div data')}</div>
-               >
-                <div style=" <div style="margin-topmargin-top: 12px: 12px;"><span;"><span style="font-weight style="font-weight:800:800; color; color:#2e7:#2e7d32d32;">📌 OVER;">📌 OVERALL ASSALL ASSESSMENTESSMENT</span><br</span><br>${>${escapeHtml(student.escapeHtml(student.overalloverall || ' || 'Not specified')}</Not specified')}</divdiv>
-               >
-                <div style <div style="="margin-top: 15margin-top: 15pxpx;"><span style;"><span style="background="background:${:${status.color}; colorstatus.color}; color:white:white; padding:4; padding:4px px 12px; border12px; border-radius:-radius:2020px; fontpx; font-size:-size:0.0.75rem75rem; font; font-weight:-weight:bold;">bold;">${status${status.label}</.label}</span></span></divdiv>
-            `>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Listening & Speaking</div>
+                <div>${escapeHtml(student.ls || 'N/A')}</div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Reading & Writing</div>
+                <div>${escapeHtml(student.rw || 'N/A')}</div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Overall</div>
+                <div>${escapeHtml(student.overall || 'N/A')}</div>
+                <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
             `;
-            printDiv;
-            printDiv.appendChild(c.appendChild(cardard);
-       );
+            printDiv.appendChild(card);
         });
-        const });
-        const styleTag styleTag = document = document.createElement('style.createElement('');
-        styleTag.textstyle');
-        styleTag.textContent = `@Content = `@media printmedia print { . { .print-area, .print-area, .print-area * {print-area * { position: position: static !important; static !important; float: float: none !important none !important;; clear: clear: both; both; overflow: visible; overflow: visible; transform: transform: none ! none !important;important; word-wrap word-wrap: break-word;: break-word; } . } .print-area .studentprint-area .student-card {-card { margin-bottom margin-bottom: 20px: 20px !important !important; page; page-break-break-inside-inside: avoid: avoid; break; break-inside: avoid; }-inside: avoid; } .print .print-area h-area h1,1, .print .print-area h2-area h2, .print, .print-area div-area div { visibility { visibility: visible: visible !important; } !important; } @page @page { margin { margin: : 1.2cm1.2cm; } body {; } body { margin: margin: 0 0; padding:; padding:  0; } }`;
-       0; } } printDiv`;
-        printDiv.appendChild(.appendChild(styleTag);
-       styleTag);
-        document.body document.body.appendChild(.appendChild(printDivprintDiv);
-       );
-        window.print window.print();
-       ();
-        setTimeout(() setTimeout(() => { => { if( if(printDivprintDiv && print && printDiv.removeDiv.remove) printDiv.remove) printDiv.remove(); }, 800(); }, 800);
-   );
+
+        document.body.appendChild(printDiv);
+        window.print();
+        setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
     }
 
-    document.addEventListener }
-
-    document.addEventListener('DOM('DOMContentLoaded', ()ContentLoaded', () => => {
-        document {
-        document.getElementById('refreshStudent.getElementById('refreshStudentListBtn')?.ListBtn')?.addEventListeneraddEventListener('click('click', populate', populateStudentSelectStudentSelect);
-        document.getElementById);
-        document.getElementById('export('exportPdfPdfBtn')?.Btn')?.addaddEventListener('EventListener('click', exportToclick', exportToPDFViaPDFViaPrintPrint);
-        populate);
-        populateStudentSelectStudentSelect();
-   ();
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('refreshStudentListBtn')?.addEventListener('click', populateStudentSelect);
+        document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPDFViaPrint);
+        populateStudentSelect();
     });
-    window.render });
-    window.renderAll =All = renderAll renderAll;
-</script;
+
+    const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
+    if (monthlyTabBtn) monthlyTabBtn.addEventListener('click', () => setTimeout(populateStudentSelect, 50));
 </script>
-</body>
-</html>
 </body>
 </html>
