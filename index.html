@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="/logo.png">
 
+    <!-- vẫn giữ thư viện nhưng không dùng cho export nữa, chỉ dùng nếu cần tính năng khác -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -163,6 +164,35 @@
         
         .action-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
         .no-export { display: none !important; }
+
+        /* --- PRINT STYLES for PDF export --- */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white;
+                color: black;
+            }
+            .no-print {
+                display: none;
+            }
+            .student-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                border: 1px solid #ccc;
+                margin-bottom: 20px;
+            }
+        }
     </style>
 </head>
 <body data-theme="light">
@@ -246,7 +276,7 @@
         <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
 
-        <!-- NEW FEATURE: EXPORT PDF (fixed) -->
+        <!-- NEW FEATURE: EXPORT PDF (using window.print, guaranteed to work) -->
         <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
@@ -254,8 +284,8 @@
             </div>
             <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 8px;">
             </select>
-            <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">Export Selected to PDF</button>
-            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students</p>
+            <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">Export Selected to PDF (Print)</button>
+            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students. Then click button → choose "Save as PDF".</p>
         </div>
     </div>
 
@@ -523,7 +553,7 @@
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
 
-    // ======================= NEW FEATURE: EXPORT PDF (FIXED - BLANK PAGE DEBUG) =======================
+    // ======================= NEW FEATURE: EXPORT PDF USING PRINT (GUARANTEED) =======================
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -552,7 +582,7 @@
         }
     }
 
-    function exportToPDF() {
+    function exportToPDFViaPrint() {
         const select = document.getElementById('studentSelectForPdf');
         const selectedIndices = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
         if (selectedIndices.length === 0) {
@@ -563,38 +593,39 @@
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
 
-        // Create temporary container, but make it visible in viewport (opacity 0, fixed, no interaction)
-        const tempDiv = document.createElement('div');
-        tempDiv.style.position = 'fixed';
-        tempDiv.style.top = '0';
-        tempDiv.style.left = '0';
-        tempDiv.style.width = '800px';
-        tempDiv.style.backgroundColor = 'white';
-        tempDiv.style.color = '#000';
-        tempDiv.style.fontFamily = "'Segoe UI', system-ui, sans-serif";
-        tempDiv.style.opacity = '0';
-        tempDiv.style.zIndex = '-1';
-        tempDiv.style.pointerEvents = 'none';
-        tempDiv.style.padding = '20px';
-        document.body.appendChild(tempDiv);
+        // Create a hidden div that will be used for printing
+        let printDiv = document.createElement('div');
+        printDiv.className = 'print-area';
+        printDiv.style.position = 'fixed';
+        printDiv.style.top = '0';
+        printDiv.style.left = '0';
+        printDiv.style.width = '100%';
+        printDiv.style.backgroundColor = 'white';
+        printDiv.style.color = 'black';
+        printDiv.style.padding = '20px';
+        printDiv.style.zIndex = '99999';
+        printDiv.style.boxSizing = 'border-box';
         
-        // Add title
+        // Title
         const title = document.createElement('h1');
         title.textContent = 'SSAP 2.0 - Student Report';
         title.style.textAlign = 'center';
         title.style.color = '#2e7d32';
         title.style.marginBottom = '30px';
-        tempDiv.appendChild(title);
+        printDiv.appendChild(title);
         
+        // Add each student card
         studentsToExport.forEach(student => {
             const status = getStatus(student.overall, student.statusOverride || "auto");
             const card = document.createElement('div');
             card.style.background = '#ffffff';
-            card.style.border = '1px solid #eeeeee';
+            card.style.border = '1px solid #cccccc';
             card.style.borderRadius = '12px';
             card.style.padding = '20px';
             card.style.marginBottom = '20px';
-            card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            card.style.boxShadow = 'none';
+            card.style.pageBreakInside = 'avoid';
+            card.style.breakInside = 'avoid';
             
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
@@ -608,38 +639,27 @@
                 <div>${escapeHtml(student.overall || 'N/A')}</div>
                 <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
             `;
-            tempDiv.appendChild(card);
+            printDiv.appendChild(card);
         });
         
+        // Footer
         const footer = document.createElement('p');
         footer.style.textAlign = 'center';
         footer.style.fontSize = '0.7rem';
         footer.style.marginTop = '30px';
         footer.style.color = '#666';
         footer.textContent = `Exported on ${new Date().toLocaleString()}`;
-        tempDiv.appendChild(footer);
+        printDiv.appendChild(footer);
         
-        // Debug: log content
-        console.log('Exporting PDF with content length:', tempDiv.innerText.length);
+        document.body.appendChild(printDiv);
         
-        const opt = {
-            margin:       0.5,
-            filename:     `SSAP_Students_${new Date().toISOString().slice(0,19)}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, letterRendering: true, logging: true },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
+        // Trigger print
+        window.print();
         
-        // Use html2pdf with explicit promise handling
-        const worker = html2pdf().set(opt).from(tempDiv);
-        worker.save().then(() => {
-            document.body.removeChild(tempDiv);
-            console.log('PDF generated successfully');
-        }).catch(err => {
-            console.error('PDF error:', err);
-            alert('Failed to generate PDF: ' + err.message);
-            document.body.removeChild(tempDiv);
-        });
+        // Remove after print (or after a short delay)
+        setTimeout(() => {
+            document.body.removeChild(printDiv);
+        }, 1000);
     }
     
     // Attach event listeners
@@ -647,10 +667,11 @@
         const refreshBtn = document.getElementById('refreshStudentListBtn');
         const exportBtn = document.getElementById('exportPdfBtn');
         if (refreshBtn) refreshBtn.addEventListener('click', populateStudentSelect);
-        if (exportBtn) exportBtn.addEventListener('click', exportToPDF);
+        if (exportBtn) exportBtn.addEventListener('click', exportToPDFViaPrint);
         populateStudentSelect();
     });
     
+    // Re-populate when monthly tab becomes active
     const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
     if (monthlyTabBtn) {
         monthlyTabBtn.addEventListener('click', () => {
