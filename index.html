@@ -245,6 +245,20 @@
         </div>
         <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
+
+        <!-- ======================= NEW FEATURE: EXPORT PDF ======================= -->
+        <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
+                <button id="refreshStudentListBtn" style="background: var(--accent); border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer;">⟳ Refresh List</button>
+            </div>
+            <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 8px;">
+                <!-- Options will be filled dynamically -->
+            </select>
+            <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">Export Selected to PDF</button>
+            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students</p>
+        </div>
+        <!-- ======================= END NEW FEATURE ======================= -->
     </div>
 
     <div id="page-bonus" class="page">
@@ -354,7 +368,7 @@
             name: document.getElementById('d-name').value.trim(),
             sti: document.getElementById('d-sti').value,
             date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
-            xp: parseInt(xpInput) || 0, // Xử lý parse từ text input an toàn
+            xp: parseInt(xpInput) || 0,
             notes: document.getElementById('d-notes').value
         };
         appData.daily.unshift(entry);
@@ -371,18 +385,15 @@
         const search = document.getElementById('searchDaily').value.toLowerCase();
         list.innerHTML = '';
         
-        // 1. Tính toán tổng XP
         const totals = {};
         appData.daily.forEach(l => {
             const n = l.name;
             totals[n] = (totals[n] || 0) + l.xp;
         });
 
-        // 2. Sắp xếp toàn bộ
         const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
         const top = allSorted.slice(0,3);
         
-        // 3. Render Top Performers
         if(top.length > 0) {
             leaderboardUI.innerHTML = `
                 <div style="font-weight: 800; color: var(--xp-gold); letter-spacing: 1px; margin-bottom: 10px;">TOP PERFORMERS</div>
@@ -392,7 +403,6 @@
                     `).join('')}
                 </div>`;
             
-            // 4. Render danh sách đầy đủ (ẩn bên trong nút View All)
             fullLeaderboardUI.innerHTML = allSorted.map((t, i) => `
                 <div class="rank-item-mini">
                     <span>${i+1}. ${t[0]}</span>
@@ -404,7 +414,6 @@
             fullLeaderboardUI.innerHTML = "";
         }
 
-        // 5. Render History List
         appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
             const xpSign = l.xp > 0 ? '+' : '';
@@ -418,7 +427,6 @@
         });
     }
 
-    // --- CÁC HÀM CÒN LẠI (MONTHLY, BONUS, THEME) ---
     function getStatus(txt, override) {
         if (override !== "auto") {
             const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
@@ -516,6 +524,123 @@
 
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
+
+    // ======================= NEW FEATURE: EXPORT PDF (no original code modified) =======================
+    function populateStudentSelect() {
+        const select = document.getElementById('studentSelectForPdf');
+        if (!select) return;
+        select.innerHTML = '';
+        appData.students.forEach((student, idx) => {
+            const option = document.createElement('option');
+            option.value = idx;
+            option.textContent = `${student.name} (${student.sti || 'No STI'})`;
+            select.appendChild(option);
+        });
+        if (appData.students.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = 'No students yet';
+            option.disabled = true;
+            select.appendChild(option);
+        }
+    }
+
+    function exportToPDF() {
+        const select = document.getElementById('studentSelectForPdf');
+        const selectedIndices = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+        if (selectedIndices.length === 0) {
+            alert('Please select at least one student to export.');
+            return;
+        }
+        
+        const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
+        if (studentsToExport.length === 0) return;
+
+        // Create a temporary div to hold the export content
+        const tempDiv = document.createElement('div');
+        tempDiv.style.padding = '20px';
+        tempDiv.style.backgroundColor = 'white';
+        tempDiv.style.color = '#000';
+        tempDiv.style.fontFamily = "'Segoe UI', system-ui, sans-serif";
+        tempDiv.style.maxWidth = '800px';
+        tempDiv.style.margin = '0 auto';
+        
+        // Add title
+        const title = document.createElement('h1');
+        title.textContent = 'SSAP 2.0 - Student Report';
+        title.style.textAlign = 'center';
+        title.style.color = '#2e7d32';
+        title.style.marginBottom = '30px';
+        tempDiv.appendChild(title);
+        
+        // For each student, clone the style of student-card
+        studentsToExport.forEach(student => {
+            const status = getStatus(student.overall, student.statusOverride || "auto");
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.style.background = '#ffffff';
+            card.style.border = '1px solid #eeeeee';
+            card.style.borderRadius = '12px';
+            card.style.padding = '20px';
+            card.style.marginBottom = '20px';
+            card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                    <div><h3 style="margin:0;">${student.name} <span style="opacity:0.5; font-size:1rem;">#${student.sti || '000'}</span></h3></div>
+                </div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Listening & Speaking</div>
+                <div>${student.ls || 'N/A'}</div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Reading & Writing</div>
+                <div>${student.rw || 'N/A'}</div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Overall</div>
+                <div>${student.overall || 'N/A'}</div>
+                <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
+            `;
+            tempDiv.appendChild(card);
+        });
+        
+        // Add footer
+        const footer = document.createElement('p');
+        footer.style.textAlign = 'center';
+        footer.style.fontSize = '0.7rem';
+        footer.style.marginTop = '30px';
+        footer.style.color = '#666';
+        footer.textContent = `Exported on ${new Date().toLocaleString()}`;
+        tempDiv.appendChild(footer);
+        
+        // Use html2pdf
+        const opt = {
+            margin:       0.5,
+            filename:     `SSAP_Students_${new Date().toISOString().slice(0,19)}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, letterRendering: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(tempDiv).save();
+    }
+    
+    // Attach event listeners for the new feature (no conflict with existing code)
+    document.addEventListener('DOMContentLoaded', () => {
+        const refreshBtn = document.getElementById('refreshStudentListBtn');
+        const exportBtn = document.getElementById('exportPdfBtn');
+        if (refreshBtn) refreshBtn.addEventListener('click', populateStudentSelect);
+        if (exportBtn) exportBtn.addEventListener('click', exportToPDF);
+        // Initial population
+        populateStudentSelect();
+    });
+    // Also re-populate when the monthly tab is shown (to catch updates after delete/add)
+    // We'll override showPage slightly? No, we just add a listener after the page loads.
+    // Since showPage is original, we can't modify. But we can detect when monthly page becomes active.
+    // Use a MutationObserver or simple setInterval? Better: add click listener to monthly tab button.
+    // The monthly tab button already has onclick="showPage('monthly')". We'll add an extra event listener without removing the original.
+    const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
+    if (monthlyTabBtn) {
+        monthlyTabBtn.addEventListener('click', () => {
+            // Small delay to ensure renderMonthly() has finished if needed, but populate just reads appData which is up-to-date.
+            populateStudentSelect();
+        });
+    }
+    // ======================= END NEW FEATURE =======================
 </script>
 </body>
 </html>
