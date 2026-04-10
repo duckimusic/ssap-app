@@ -164,7 +164,7 @@
         .action-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
         .no-export { display: none !important; }
 
-        /* --- PRINT STYLES for PDF export --- */
+        /* --- FIXED PRINT STYLES - NO OVERLAP --- */
         @media print {
             body * {
                 visibility: hidden;
@@ -181,15 +181,19 @@
                 padding: 20px;
                 background: white;
                 color: black;
+                display: block;
+                overflow: visible;
+                box-sizing: border-box;
             }
-            .no-print {
-                display: none;
-            }
-            .student-card {
+            .print-area .student-card {
                 break-inside: avoid;
                 page-break-inside: avoid;
                 border: 1px solid #ccc;
-                margin-bottom: 20px;
+                margin-bottom: 20px !important;
+                display: block;
+                clear: both;
+                overflow: visible;
+                page-break-after: avoid;
             }
         }
     </style>
@@ -275,7 +279,7 @@
         <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
 
-        <!-- NEW FEATURE: EXPORT PDF using print, without date/time footer -->
+        <!-- EXPORT PDF SECTION (fixed overlap) -->
         <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
@@ -284,7 +288,7 @@
             <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 8px;">
             </select>
             <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">Export Selected to PDF (Print)</button>
-            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students. Then click button → choose "Save as PDF".</p>
+            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students → click button → choose "Save as PDF".</p>
         </div>
     </div>
 
@@ -310,7 +314,6 @@
     let duckCount = 0;
     let isAdmin = false;
 
-    // --- CONNECTION LISTENERS ---
     window.addEventListener('online', () => { initApp(); });
     window.addEventListener('offline', () => { console.warn("Offline"); });
 
@@ -344,7 +347,6 @@
         localStorage.setItem('stu_bonus', JSON.stringify(appData.bonus));
     }
 
-    // --- SPLASH & STARTUP ---
     function hideSplash() {
         document.getElementById('splash-screen').classList.add('splash-hidden');
         document.body.classList.add('app-loaded');
@@ -371,7 +373,6 @@
         });
     });
 
-    // --- TABS & UI ---
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -387,7 +388,6 @@
         btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
 
-    // --- LOGIC: DAILY & LEADERBOARD ---
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const xpInput = document.getElementById('d-xp').value;
@@ -413,29 +413,14 @@
         list.innerHTML = '';
         
         const totals = {};
-        appData.daily.forEach(l => {
-            const n = l.name;
-            totals[n] = (totals[n] || 0) + l.xp;
-        });
-
+        appData.daily.forEach(l => { totals[l.name] = (totals[l.name] || 0) + l.xp; });
         const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
         const top = allSorted.slice(0,3);
         
         if(top.length > 0) {
-            leaderboardUI.innerHTML = `
-                <div style="font-weight: 800; color: var(--xp-gold); letter-spacing: 1px; margin-bottom: 10px;">TOP PERFORMERS</div>
-                <div class="leaderboard-ranks">
-                    ${top.map((t, i) => `
-                        <div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>
-                    `).join('')}
-                </div>`;
-            
-            fullLeaderboardUI.innerHTML = allSorted.map((t, i) => `
-                <div class="rank-item-mini">
-                    <span>${i+1}. ${t[0]}</span>
-                    <span style="color:var(--xp-gold); font-weight:bold;">${t[1]} XP</span>
-                </div>
-            `).join('');
+            leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">TOP PERFORMERS</div>
+                <div class="leaderboard-ranks">${top.map((t,i)=>`<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
+            fullLeaderboardUI.innerHTML = allSorted.map((t,i)=>`<div class="rank-item-mini"><span>${i+1}. ${t[0]}</span><span style="color:var(--xp-gold);">${t[1]} XP</span></div>`).join('');
         } else {
             leaderboardUI.innerHTML = "🏆 No XP data yet.";
             fullLeaderboardUI.innerHTML = "";
@@ -444,13 +429,9 @@
         appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
             const xpSign = l.xp > 0 ? '+' : '';
-            list.innerHTML += `
-                <div class="student-card">
-                    <button onclick="deleteItem('daily', ${i})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>
-                    <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp < 0 ? '#d32f2f' : 'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
-                    <div style="font-size:0.8rem; opacity:0.6">${l.date}</div>
-                    <div style="margin-top:10px;">${l.notes}</div>
-                </div>`;
+            list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" style="float:right; background:none; border:none;">🗑️</button>
+                <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
+                <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${l.notes}</div></div>`;
         });
     }
 
@@ -487,16 +468,11 @@
             if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
             const status = getStatus(s.overall, s.statusOverride || "auto");
             list.innerHTML += `<div class="student-card">
-                <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                    <div><h3 style="margin:0;">${escapeHtml(s.name)} <span style="opacity:0.5; font-size:1rem;">#${escapeHtml(s.sti || '000')}</span></h3></div>
-                    <div style="display:flex; gap:15px; opacity:0.5;">
-                        <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
-                        <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
-                    </div>
-                </div>
-                <div class="section-label">Listening & Speaking</div><div>${escapeHtml(s.ls || 'N/A')}</div>
-                <div class="section-label">Reading & Writing</div><div>${escapeHtml(s.rw || 'N/A')}</div>
-                <div class="section-label">Overall</div><div>${escapeHtml(s.overall || 'N/A')}</div>
+                <div style="display:flex; justify-content:space-between;"><h3>${escapeHtml(s.name)} <span style="opacity:0.5;">#${escapeHtml(s.sti||'000')}</span></h3>
+                <div><span onclick="deleteItem('monthly', ${i})" style="cursor:pointer;">🗑️</span> <span onclick="editStudent(${i})" style="cursor:pointer;">⋮</span></div></div>
+                <div class="section-label">Listening & Speaking</div><div>${escapeHtml(s.ls||'N/A')}</div>
+                <div class="section-label">Reading & Writing</div><div>${escapeHtml(s.rw||'N/A')}</div>
+                <div class="section-label">Overall</div><div>${escapeHtml(s.overall||'N/A')}</div>
                 <div class="status-badge" style="background:${status.color}">${status.label}</div>
             </div>`;
         });
@@ -527,10 +503,8 @@
         const list = document.getElementById('bonusList');
         list.innerHTML = '';
         appData.bonus.forEach((b, i) => {
-            list.innerHTML += `<div class="comment-card">
-                ${isAdmin ? `<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>` : ''}
-                <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem; opacity:0.5">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p>
-            </div>`;
+            list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>`:''}
+                <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem;">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p></div>`;
         });
     }
 
@@ -543,24 +517,18 @@
     }
 
     function toggleTheme() {
-        const b = document.body;
-        const isLight = b.getAttribute('data-theme') === 'light';
-        b.setAttribute('data-theme', isLight ? 'dark' : 'light');
+        const isLight = document.body.getAttribute('data-theme') === 'light';
+        document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
         document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
 
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
 
-    // ======================= NEW FEATURE: EXPORT PDF USING PRINT (NO DATE/TIME) =======================
+    // ======================= FIXED EXPORT PDF (NO OVERLAP, NO DATE) =======================
     function escapeHtml(str) {
         if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
     }
 
     function populateStudentSelect() {
@@ -585,24 +553,23 @@
         const select = document.getElementById('studentSelectForPdf');
         const selectedIndices = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
         if (selectedIndices.length === 0) {
-            alert('Please select at least one student to export.');
+            alert('Please select at least one student.');
             return;
         }
-        
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
 
-        let printDiv = document.createElement('div');
+        // Create print container
+        const printDiv = document.createElement('div');
         printDiv.className = 'print-area';
-        printDiv.style.position = 'fixed';
+        printDiv.style.position = 'absolute';
         printDiv.style.top = '0';
         printDiv.style.left = '0';
         printDiv.style.width = '100%';
         printDiv.style.backgroundColor = 'white';
-        printDiv.style.color = 'black';
         printDiv.style.padding = '20px';
-        printDiv.style.zIndex = '99999';
         printDiv.style.boxSizing = 'border-box';
+        printDiv.style.zIndex = '99999';
         
         const title = document.createElement('h1');
         title.textContent = 'SSAP 2.0 - Student Report';
@@ -614,18 +581,21 @@
         studentsToExport.forEach(student => {
             const status = getStatus(student.overall, student.statusOverride || "auto");
             const card = document.createElement('div');
-            card.style.background = '#ffffff';
-            card.style.border = '1px solid #cccccc';
+            card.className = 'student-card';
+            card.style.background = '#fff';
+            card.style.border = '1px solid #ccc';
             card.style.borderRadius = '12px';
             card.style.padding = '20px';
             card.style.marginBottom = '20px';
-            card.style.boxShadow = 'none';
             card.style.pageBreakInside = 'avoid';
             card.style.breakInside = 'avoid';
+            card.style.display = 'block';
+            card.style.clear = 'both';
+            card.style.overflow = 'visible';
             
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                    <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5; font-size:1rem;">#${escapeHtml(student.sti || '000')}</span></h3></div>
+                    <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5;">#${escapeHtml(student.sti || '000')}</span></h3></div>
                 </div>
                 <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Listening & Speaking</div>
                 <div>${escapeHtml(student.ls || 'N/A')}</div>
@@ -633,36 +603,24 @@
                 <div>${escapeHtml(student.rw || 'N/A')}</div>
                 <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Overall</div>
                 <div>${escapeHtml(student.overall || 'N/A')}</div>
-                <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
+                <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
             `;
             printDiv.appendChild(card);
         });
         
-        // No footer with date/time
-        
         document.body.appendChild(printDiv);
         window.print();
-        
-        setTimeout(() => {
-            document.body.removeChild(printDiv);
-        }, 1000);
+        setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
     }
     
     document.addEventListener('DOMContentLoaded', () => {
-        const refreshBtn = document.getElementById('refreshStudentListBtn');
-        const exportBtn = document.getElementById('exportPdfBtn');
-        if (refreshBtn) refreshBtn.addEventListener('click', populateStudentSelect);
-        if (exportBtn) exportBtn.addEventListener('click', exportToPDFViaPrint);
+        document.getElementById('refreshStudentListBtn')?.addEventListener('click', populateStudentSelect);
+        document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPDFViaPrint);
         populateStudentSelect();
     });
     
     const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
-    if (monthlyTabBtn) {
-        monthlyTabBtn.addEventListener('click', () => {
-            setTimeout(populateStudentSelect, 50);
-        });
-    }
-    // ======================= END NEW FEATURE =======================
+    if (monthlyTabBtn) monthlyTabBtn.addEventListener('click', () => setTimeout(populateStudentSelect, 50));
 </script>
 </body>
 </html>
