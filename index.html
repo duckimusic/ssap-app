@@ -523,7 +523,7 @@
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
 
-    // ======================= NEW FEATURE: EXPORT PDF (FIXED) =======================
+    // ======================= NEW FEATURE: EXPORT PDF (FIXED - BLANK PAGE DEBUG) =======================
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -563,16 +563,19 @@
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
 
-        // Create temporary container and add to DOM (offscreen)
+        // Create temporary container, but make it visible in viewport (opacity 0, fixed, no interaction)
         const tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.top = '-9999px';
-        tempDiv.style.left = '-9999px';
+        tempDiv.style.position = 'fixed';
+        tempDiv.style.top = '0';
+        tempDiv.style.left = '0';
         tempDiv.style.width = '800px';
-        tempDiv.style.padding = '20px';
         tempDiv.style.backgroundColor = 'white';
         tempDiv.style.color = '#000';
         tempDiv.style.fontFamily = "'Segoe UI', system-ui, sans-serif";
+        tempDiv.style.opacity = '0';
+        tempDiv.style.zIndex = '-1';
+        tempDiv.style.pointerEvents = 'none';
+        tempDiv.style.padding = '20px';
         document.body.appendChild(tempDiv);
         
         // Add title
@@ -616,24 +619,30 @@
         footer.textContent = `Exported on ${new Date().toLocaleString()}`;
         tempDiv.appendChild(footer);
         
+        // Debug: log content
+        console.log('Exporting PDF with content length:', tempDiv.innerText.length);
+        
         const opt = {
             margin:       0.5,
             filename:     `SSAP_Students_${new Date().toISOString().slice(0,19)}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, letterRendering: true },
+            html2canvas:  { scale: 2, letterRendering: true, logging: true },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
         
-        html2pdf().set(opt).from(tempDiv).save().then(() => {
+        // Use html2pdf with explicit promise handling
+        const worker = html2pdf().set(opt).from(tempDiv);
+        worker.save().then(() => {
             document.body.removeChild(tempDiv);
+            console.log('PDF generated successfully');
         }).catch(err => {
             console.error('PDF error:', err);
-            alert('Failed to generate PDF. Check console for details.');
+            alert('Failed to generate PDF: ' + err.message);
             document.body.removeChild(tempDiv);
         });
     }
     
-    // Attach event listeners for the new feature
+    // Attach event listeners
     document.addEventListener('DOMContentLoaded', () => {
         const refreshBtn = document.getElementById('refreshStudentListBtn');
         const exportBtn = document.getElementById('exportPdfBtn');
@@ -642,7 +651,6 @@
         populateStudentSelect();
     });
     
-    // Re-populate when monthly tab becomes active
     const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
     if (monthlyTabBtn) {
         monthlyTabBtn.addEventListener('click', () => {
