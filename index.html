@@ -246,19 +246,17 @@
         <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
 
-        <!-- ======================= NEW FEATURE: EXPORT PDF ======================= -->
+        <!-- NEW FEATURE: EXPORT PDF (fixed) -->
         <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
                 <button id="refreshStudentListBtn" style="background: var(--accent); border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer;">⟳ Refresh List</button>
             </div>
             <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 8px;">
-                <!-- Options will be filled dynamically -->
             </select>
             <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">Export Selected to PDF</button>
             <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students</p>
         </div>
-        <!-- ======================= END NEW FEATURE ======================= -->
     </div>
 
     <div id="page-bonus" class="page">
@@ -461,15 +459,15 @@
             const status = getStatus(s.overall, s.statusOverride || "auto");
             list.innerHTML += `<div class="student-card">
                 <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                    <div><h3 style="margin:0;">${s.name} <span style="opacity:0.5; font-size:1.1rem;">#${s.sti || '000'}</span></h3></div>
+                    <div><h3 style="margin:0;">${escapeHtml(s.name)} <span style="opacity:0.5; font-size:1rem;">#${escapeHtml(s.sti || '000')}</span></h3></div>
                     <div style="display:flex; gap:15px; opacity:0.5;">
                         <span style="cursor:pointer;" onclick="deleteItem('monthly', ${i})">🗑️</span>
                         <span style="cursor:pointer;" onclick="editStudent(${i})">⋮</span>
                     </div>
                 </div>
-                <div class="section-label">Listening & Speaking</div><div>${s.ls || 'N/A'}</div>
-                <div class="section-label">Reading & Writing</div><div>${s.rw || 'N/A'}</div>
-                <div class="section-label">Overall</div><div>${s.overall || 'N/A'}</div>
+                <div class="section-label">Listening & Speaking</div><div>${escapeHtml(s.ls || 'N/A')}</div>
+                <div class="section-label">Reading & Writing</div><div>${escapeHtml(s.rw || 'N/A')}</div>
+                <div class="section-label">Overall</div><div>${escapeHtml(s.overall || 'N/A')}</div>
                 <div class="status-badge" style="background:${status.color}">${status.label}</div>
             </div>`;
         });
@@ -502,7 +500,7 @@
         appData.bonus.forEach((b, i) => {
             list.innerHTML += `<div class="comment-card">
                 ${isAdmin ? `<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>` : ''}
-                <strong>${b.name}</strong> <span style="font-size:0.6rem; opacity:0.5">${b.date}</span><p>"${b.msg}"</p>
+                <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem; opacity:0.5">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p>
             </div>`;
         });
     }
@@ -525,7 +523,17 @@
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
 
-    // ======================= NEW FEATURE: EXPORT PDF (no original code modified) =======================
+    // ======================= NEW FEATURE: EXPORT PDF (FIXED) =======================
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
     function populateStudentSelect() {
         const select = document.getElementById('studentSelectForPdf');
         if (!select) return;
@@ -555,14 +563,17 @@
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
 
-        // Create a temporary div to hold the export content
+        // Create temporary container and add to DOM (offscreen)
         const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.top = '-9999px';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.width = '800px';
         tempDiv.style.padding = '20px';
         tempDiv.style.backgroundColor = 'white';
         tempDiv.style.color = '#000';
         tempDiv.style.fontFamily = "'Segoe UI', system-ui, sans-serif";
-        tempDiv.style.maxWidth = '800px';
-        tempDiv.style.margin = '0 auto';
+        document.body.appendChild(tempDiv);
         
         // Add title
         const title = document.createElement('h1');
@@ -572,11 +583,9 @@
         title.style.marginBottom = '30px';
         tempDiv.appendChild(title);
         
-        // For each student, clone the style of student-card
         studentsToExport.forEach(student => {
             const status = getStatus(student.overall, student.statusOverride || "auto");
             const card = document.createElement('div');
-            card.className = 'student-card';
             card.style.background = '#ffffff';
             card.style.border = '1px solid #eeeeee';
             card.style.borderRadius = '12px';
@@ -586,20 +595,19 @@
             
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                    <div><h3 style="margin:0;">${student.name} <span style="opacity:0.5; font-size:1rem;">#${student.sti || '000'}</span></h3></div>
+                    <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5; font-size:1rem;">#${escapeHtml(student.sti || '000')}</span></h3></div>
                 </div>
                 <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Listening & Speaking</div>
-                <div>${student.ls || 'N/A'}</div>
+                <div>${escapeHtml(student.ls || 'N/A')}</div>
                 <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Reading & Writing</div>
-                <div>${student.rw || 'N/A'}</div>
+                <div>${escapeHtml(student.rw || 'N/A')}</div>
                 <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Overall</div>
-                <div>${student.overall || 'N/A'}</div>
+                <div>${escapeHtml(student.overall || 'N/A')}</div>
                 <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
             `;
             tempDiv.appendChild(card);
         });
         
-        // Add footer
         const footer = document.createElement('p');
         footer.style.textAlign = 'center';
         footer.style.fontSize = '0.7rem';
@@ -608,7 +616,6 @@
         footer.textContent = `Exported on ${new Date().toLocaleString()}`;
         tempDiv.appendChild(footer);
         
-        // Use html2pdf
         const opt = {
             margin:       0.5,
             filename:     `SSAP_Students_${new Date().toISOString().slice(0,19)}.pdf`,
@@ -616,28 +623,30 @@
             html2canvas:  { scale: 2, letterRendering: true },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
-        html2pdf().set(opt).from(tempDiv).save();
+        
+        html2pdf().set(opt).from(tempDiv).save().then(() => {
+            document.body.removeChild(tempDiv);
+        }).catch(err => {
+            console.error('PDF error:', err);
+            alert('Failed to generate PDF. Check console for details.');
+            document.body.removeChild(tempDiv);
+        });
     }
     
-    // Attach event listeners for the new feature (no conflict with existing code)
+    // Attach event listeners for the new feature
     document.addEventListener('DOMContentLoaded', () => {
         const refreshBtn = document.getElementById('refreshStudentListBtn');
         const exportBtn = document.getElementById('exportPdfBtn');
         if (refreshBtn) refreshBtn.addEventListener('click', populateStudentSelect);
         if (exportBtn) exportBtn.addEventListener('click', exportToPDF);
-        // Initial population
         populateStudentSelect();
     });
-    // Also re-populate when the monthly tab is shown (to catch updates after delete/add)
-    // We'll override showPage slightly? No, we just add a listener after the page loads.
-    // Since showPage is original, we can't modify. But we can detect when monthly page becomes active.
-    // Use a MutationObserver or simple setInterval? Better: add click listener to monthly tab button.
-    // The monthly tab button already has onclick="showPage('monthly')". We'll add an extra event listener without removing the original.
+    
+    // Re-populate when monthly tab becomes active
     const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
     if (monthlyTabBtn) {
         monthlyTabBtn.addEventListener('click', () => {
-            // Small delay to ensure renderMonthly() has finished if needed, but populate just reads appData which is up-to-date.
-            populateStudentSelect();
+            setTimeout(populateStudentSelect, 50);
         });
     }
     // ======================= END NEW FEATURE =======================
