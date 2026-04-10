@@ -9,7 +9,6 @@
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="/logo.png">
 
-    <!-- vẫn giữ thư viện nhưng không dùng cho export nữa, chỉ dùng nếu cần tính năng khác -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -276,7 +275,7 @@
         <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
 
-        <!-- NEW FEATURE: EXPORT PDF (using window.print, guaranteed to work) -->
+        <!-- NEW FEATURE: EXPORT PDF using print, without date/time footer -->
         <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
@@ -553,7 +552,7 @@
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
 
-    // ======================= NEW FEATURE: EXPORT PDF USING PRINT (GUARANTEED) =======================
+    // ======================= NEW FEATURE: EXPORT PDF USING PRINT (NO DATE/TIME) =======================
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -593,7 +592,6 @@
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
 
-        // Create a hidden div that will be used for printing
         let printDiv = document.createElement('div');
         printDiv.className = 'print-area';
         printDiv.style.position = 'fixed';
@@ -606,7 +604,6 @@
         printDiv.style.zIndex = '99999';
         printDiv.style.boxSizing = 'border-box';
         
-        // Title
         const title = document.createElement('h1');
         title.textContent = 'SSAP 2.0 - Student Report';
         title.style.textAlign = 'center';
@@ -614,7 +611,6 @@
         title.style.marginBottom = '30px';
         printDiv.appendChild(title);
         
-        // Add each student card
         studentsToExport.forEach(student => {
             const status = getStatus(student.overall, student.statusOverride || "auto");
             const card = document.createElement('div');
@@ -642,27 +638,16 @@
             printDiv.appendChild(card);
         });
         
-        // Footer
-        const footer = document.createElement('p');
-        footer.style.textAlign = 'center';
-        footer.style.fontSize = '0.7rem';
-        footer.style.marginTop = '30px';
-        footer.style.color = '#666';
-        footer.textContent = `Exported on ${new Date().toLocaleString()}`;
-        printDiv.appendChild(footer);
+        // No footer with date/time
         
         document.body.appendChild(printDiv);
-        
-        // Trigger print
         window.print();
         
-        // Remove after print (or after a short delay)
         setTimeout(() => {
             document.body.removeChild(printDiv);
         }, 1000);
     }
     
-    // Attach event listeners
     document.addEventListener('DOMContentLoaded', () => {
         const refreshBtn = document.getElementById('refreshStudentListBtn');
         const exportBtn = document.getElementById('exportPdfBtn');
@@ -671,7 +656,6 @@
         populateStudentSelect();
     });
     
-    // Re-populate when monthly tab becomes active
     const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
     if (monthlyTabBtn) {
         monthlyTabBtn.addEventListener('click', () => {
