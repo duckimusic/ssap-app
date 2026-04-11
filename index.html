@@ -1,14 +1,14 @@
+Here is an HTML document that adds retro game-style sound effects to all buttons, with a special "cartoon pipe" sound for negative XP entries and delete actions.
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>SSAP 2.0 | Home</title>
-
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="/logo.png">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -55,7 +55,7 @@
 
         /* --- TABS --- */
         .nav-tabs { display: flex; background: #000; padding: 10px 20px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .tab-btn { background: transparent; border: none; color: #666; padding: 12px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
+        .tab-btn { background: transparent; border: none; color: #666; padding: 12px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; transition: 0.2s; }
         .tab-btn.active { color: #fff; border-bottom: 2px solid var(--accent); }
 
         .container { max-width: 900px; margin: 20px auto; padding: 0 20px; opacity: 0; transition: opacity 1s ease-in; }
@@ -70,7 +70,8 @@
         .full { grid-column: 1 / -1; }
         label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 0.7rem; color: var(--primary); text-transform: uppercase; }
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); box-sizing: border-box; }
-        .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
+        .btn-add { background: var(--primary); color: white; padding: 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; transition: 0.1s transform; }
+        .btn-add:active { transform: scale(0.97); }
 
         /* --- GAMIFIED LEADERBOARD --- */
         .leaderboard { 
@@ -151,14 +152,14 @@
 
         /* --- XP & CARDS --- */
         .xp-badge { background: var(--xp-gold); color: #000; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.7rem; }
-        .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
+        .student-card { background: var(--card); border-radius: 10px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; transition: 0.1s; }
         .section-label { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; margin-top: 15px; color: var(--accent); }
         .status-badge { font-size: 0.6rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 10px; }
 
         /* --- DUCK PAGE --- */
         .duck-box { text-align: center; margin-bottom: 20px; }
-        #the-duck { font-size: 3.5rem; cursor: pointer; display: inline-block; transition: 0.2s; user-select: none; }
-        #the-duck:active { transform: scale(1.3); }
+        #the-duck { font-size: 3.5rem; cursor: pointer; display: inline-block; transition: 0.1s; user-select: none; }
+        #the-duck:active { transform: scale(1.2); }
         .comment-card { background: #fffde7; border-left: 4px solid #fbc02d; padding: 15px; margin-bottom: 10px; border-radius: 4px; color: #333; }
 
         .action-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
@@ -215,23 +216,22 @@
 <audio id="startup-sound" src="startup.mp3"></audio>
 
 <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="showPage('daily')">📅 Daily</button>
-    <button class="tab-btn" onclick="showPage('monthly')">📊 Monthly SSAP</button>
-    <button class="tab-btn" onclick="showPage('bonus')">🦆 Bonus</button>
+    <button class="tab-btn active" data-page="daily">📅 Daily</button>
+    <button class="tab-btn" data-page="monthly">📊 Monthly SSAP</button>
+    <button class="tab-btn" data-page="bonus">🦆 Bonus</button>
 </nav>
 
 <div class="container">
     <div class="header-box">
         <h2 style="margin:0; font-weight: 300;">SSAP <span style="color:var(--primary); font-weight: 800;">2.0</span></h2>
-        <button class="theme-btn" onclick="toggleTheme()" id="themeText" style="background: var(--card); border: 1px solid var(--border); padding: 5px 15px; border-radius: 20px; cursor: pointer;">🌙 Dark</button>
+        <button class="theme-btn" id="themeToggleBtn" style="background: var(--card); border: 1px solid var(--border); padding: 5px 15px; border-radius: 20px; cursor: pointer;">🌙 Dark</button>
     </div>
 
     <div id="page-daily" class="page active">
         <div class="leaderboard" id="xpLeaderboard">
              <div id="alien-container"><span id="leaderboard-alien">👾</span></div>
              <div id="leaderboard-content">🏆 XP Leaderboard: Loading...</div>
-
-             <button class="view-all-btn" onclick="toggleFullLeaderboard()" id="btnViewAll">View Full Rankings</button>
+             <button class="view-all-btn" id="viewAllRankBtn">View Full Rankings</button>
              <div id="full-leaderboard" class="full-rank-list"></div>
         </div>
 
@@ -244,7 +244,7 @@
                     <div class="full"><label>XP Change (+/-)</label><input type="text" inputmode="decimal" id="d-xp" value="0"></div>
                     <div class="full"><label>Notes / Behavior</label><textarea id="d-notes" rows="2"></textarea></div>
                 </div>
-                <button type="submit" class="btn-add">Log Daily Activity</button>
+                <button type="submit" class="btn-add" id="dailySubmitBtn">Log Daily Activity</button>
             </form>
         </div>
         <div class="form-grid" style="margin-bottom: 20px;">
@@ -279,7 +279,6 @@
         <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
 
-        <!-- EXPORT PDF SECTION (fixed overlap) -->
         <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
@@ -294,7 +293,7 @@
 
     <div id="page-bonus" class="page">
         <div class="duck-box">
-            <div id="the-duck" onclick="duckSecret()">🦆</div>
+            <div id="the-duck" style="cursor:pointer;">🦆</div>
             <p style="font-size:0.6rem; opacity:0.5">This duck quacks 8 times!</p>
         </div>
         <div class="input-card">
@@ -309,6 +308,92 @@
 </div>
 
 <script>
+    // ----------------------------- 8-BIT SOUND ENGINE + CARTOON PIPE -------------------------
+    let audioCtx = null;
+    let soundAllowed = false;
+
+    function initAudio() {
+        if (audioCtx) return audioCtx;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        } catch(e) { console.warn("Web Audio not supported"); return null; }
+    }
+
+    // Play retro power-up sound (8-bit style, ascending arpeggio)
+    function playPowerUpSound() {
+        if (!soundAllowed) return;
+        const ctx = initAudio();
+        if (!ctx) return;
+        // resume if suspended
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0.25, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+        gainNode.connect(ctx.destination);
+        
+        // melody: 8-bit powerup: three rising notes
+        const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        freqs.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            osc.connect(gainNode);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.25);
+        });
+        // extra short zap
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'triangle';
+        osc2.frequency.value = 880;
+        osc2.connect(gainNode);
+        osc2.start(now + 0.2);
+        osc2.stop(now + 0.35);
+    }
+
+    // Cartoon pipe sound (descending "boing" / fall)
+    function playPipeSound() {
+        if (!soundAllowed) return;
+        const ctx = initAudio();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+        gain.connect(ctx.destination);
+        
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.35);
+        osc.connect(gain);
+        osc.start(now);
+        osc.stop(now + 0.45);
+        
+        // add a little resonance
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 800;
+        osc.connect(filter);
+        filter.connect(gain);
+    }
+
+    // enable sounds after first user interaction
+    function enableSoundsOnFirstClick() {
+        if (soundAllowed) return;
+        soundAllowed = true;
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        // optional short beep to confirm
+        const ctx = initAudio();
+        if (ctx && ctx.state !== 'running') ctx.resume();
+    }
+    document.body.addEventListener('click', () => { enableSoundsOnFirstClick(); }, { once: true });
+    // also enable on touch/start
+    document.body.addEventListener('touchstart', () => { enableSoundsOnFirstClick(); }, { once: true });
+
+    // ----------------------------- APP DATA -----------------------------
     let appData = { students: [], daily: [], bonus: [] };
     let editIdx = null;
     let duckCount = 0;
@@ -356,12 +441,14 @@
         const startBtn = document.getElementById('start-btn');
         const video = document.getElementById('splash-video');
         const logo = document.getElementById('splash-logo');
-        const audio = document.getElementById('startup-sound');
+        const audioEl = document.getElementById('startup-sound');
         document.getElementById('loader').style.display = 'none';
         startBtn.style.display = 'inline-block';
 
         startBtn.addEventListener('click', () => {
-            audio.play().catch(e => {}); 
+            enableSoundsOnFirstClick();
+            playPowerUpSound();
+            audioEl.play().catch(e => {}); 
             logo.style.display = 'none';
             document.querySelector('.logo-text').style.display = 'none';
             video.style.display = 'block';
@@ -374,28 +461,41 @@
     });
 
     function showPage(pageId) {
+        playPowerUpSound();
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('data-page') === pageId);
+        if (activeBtn) activeBtn.classList.add('active');
+        if (pageId === 'monthly') setTimeout(populateStudentSelect, 50);
         renderAll();
     }
 
     function toggleFullLeaderboard() {
+        playPowerUpSound();
         const list = document.getElementById('full-leaderboard');
-        const btn = document.getElementById('btnViewAll');
+        const btn = document.getElementById('viewAllRankBtn');
         list.classList.toggle('show');
         btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
 
+    // Daily form submission with XP check: negative XP -> pipe sound, else powerup
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const xpInput = document.getElementById('d-xp').value;
+        const xpInputVal = document.getElementById('d-xp').value;
+        const xpNum = parseInt(xpInputVal) || 0;
+        // Play appropriate sound BEFORE saving
+        if (xpNum < 0) {
+            playPipeSound();   // cartoon pipe for subtracting points
+        } else {
+            playPowerUpSound();
+        }
+        
         const entry = {
             name: document.getElementById('d-name').value.trim(),
             sti: document.getElementById('d-sti').value,
             date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
-            xp: parseInt(xpInput) || 0,
+            xp: xpNum,
             notes: document.getElementById('d-notes').value
         };
         appData.daily.unshift(entry);
@@ -429,9 +529,9 @@
         appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
             const xpSign = l.xp > 0 ? '+' : '';
-            list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" style="float:right; background:none; border:none;">🗑️</button>
-                <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
-                <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${l.notes}</div></div>`;
+            list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" class="delete-icon-btn" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">🗑️</button>
+                <strong>${escapeHtml(l.name)}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
+                <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${escapeHtml(l.notes)}</div></div>`;
         });
     }
 
@@ -448,6 +548,7 @@
 
     document.getElementById('studentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        playPowerUpSound();  // saving monthly always powerup
         const data = {
             name: document.getElementById('name').value, sti: document.getElementById('sti').value,
             unit: document.getElementById('unit').value, course: document.getElementById('course').value,
@@ -457,7 +558,7 @@
         if (editIdx !== null) { appData.students[editIdx] = data; editIdx = null; } 
         else { appData.students.unshift(data); }
         await triggerSave();
-        e.target.reset(); renderMonthly();
+        e.target.reset(); renderMonthly(); populateStudentSelect();
     });
 
     function renderMonthly() {
@@ -469,7 +570,7 @@
             const status = getStatus(s.overall, s.statusOverride || "auto");
             list.innerHTML += `<div class="student-card">
                 <div style="display:flex; justify-content:space-between;"><h3>${escapeHtml(s.name)} <span style="opacity:0.5;">#${escapeHtml(s.sti||'000')}</span></h3>
-                <div><span onclick="deleteItem('monthly', ${i})" style="cursor:pointer;">🗑️</span> <span onclick="editStudent(${i})" style="cursor:pointer;">⋮</span></div></div>
+                <div><span onclick="deleteItem('monthly', ${i})" class="delete-icon-btn" style="cursor:pointer; margin-right:8px;">🗑️</span> <span onclick="editStudent(${i})" class="edit-icon-btn" style="cursor:pointer;">⋮</span></div></div>
                 <div class="section-label">Listening & Speaking</div><div>${escapeHtml(s.ls||'N/A')}</div>
                 <div class="section-label">Reading & Writing</div><div>${escapeHtml(s.rw||'N/A')}</div>
                 <div class="section-label">Overall</div><div>${escapeHtml(s.overall||'N/A')}</div>
@@ -479,6 +580,7 @@
     }
 
     function editStudent(i) {
+        playPowerUpSound();
         const s = appData.students[i];
         document.getElementById('name').value = s.name; document.getElementById('sti').value = s.sti;
         document.getElementById('unit').value = s.unit; document.getElementById('course').value = s.course;
@@ -489,12 +591,14 @@
     }
 
     function duckSecret() {
+        playPowerUpSound();
         duckCount++;
         if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
     }
 
     document.getElementById('bonusForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        playPowerUpSound();
         appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
         await triggerSave(); e.target.reset(); renderBonus();
     });
@@ -503,29 +607,31 @@
         const list = document.getElementById('bonusList');
         list.innerHTML = '';
         appData.bonus.forEach((b, i) => {
-            list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>`:''}
+            list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right; background:transparent; border:none;">❌</button>`:''}
                 <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem;">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p></div>`;
         });
     }
 
     async function deleteItem(type, i) {
         if(!confirm("Delete?")) return;
+        playPipeSound();  // deletion uses cartoon pipe (negative/destructive)
         if(type === 'daily') appData.daily.splice(i, 1);
         if(type === 'monthly') appData.students.splice(i, 1);
         if(type === 'bonus') appData.bonus.splice(i, 1);
         await triggerSave(); renderAll();
+        if(type === 'monthly') populateStudentSelect();
     }
 
     function toggleTheme() {
+        playPowerUpSound();
         const isLight = document.body.getAttribute('data-theme') === 'light';
         document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
-        document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
+        document.getElementById('themeToggleBtn').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
 
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
 
-    // ======================= FIXED EXPORT PDF (NO OVERLAP, NO DATE) =======================
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
@@ -550,6 +656,7 @@
     }
 
     function exportToPDFViaPrint() {
+        playPowerUpSound();
         const select = document.getElementById('studentSelectForPdf');
         const selectedIndices = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
         if (selectedIndices.length === 0) {
@@ -559,7 +666,6 @@
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
 
-        // Create print container
         const printDiv = document.createElement('div');
         printDiv.className = 'print-area';
         printDiv.style.position = 'absolute';
@@ -589,10 +695,6 @@
             card.style.marginBottom = '20px';
             card.style.pageBreakInside = 'avoid';
             card.style.breakInside = 'avoid';
-            card.style.display = 'block';
-            card.style.clear = 'both';
-            card.style.overflow = 'visible';
-
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
                     <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5;">#${escapeHtml(student.sti || '000')}</span></h3></div>
@@ -613,14 +715,25 @@
         setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('refreshStudentListBtn')?.addEventListener('click', populateStudentSelect);
-        document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPDFViaPrint);
-        populateStudentSelect();
+    // attach event listeners for all interactive buttons with sounds
+    document.getElementById('viewAllRankBtn')?.addEventListener('click', toggleFullLeaderboard);
+    document.getElementById('refreshStudentListBtn')?.addEventListener('click', () => { playPowerUpSound(); populateStudentSelect(); });
+    document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPDFViaPrint);
+    document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+    document.getElementById('the-duck')?.addEventListener('click', duckSecret);
+    
+    // tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const page = btn.getAttribute('data-page');
+            if(page) showPage(page);
+        });
     });
-
-    const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
-    if (monthlyTabBtn) monthlyTabBtn.addEventListener('click', () => setTimeout(populateStudentSelect, 50));
+    
+    populateStudentSelect();
+    document.getElementById('d-date').valueAsDate = new Date();
+    initApp();
 </script>
 </body>
 </html>
+```
