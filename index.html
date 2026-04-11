@@ -376,7 +376,7 @@
         } catch (e) {}
     }
 
-    // ======================= LOGIC CHÍNH =======================
+    // ======================= DỮ LIỆU & KHỞI TẠO =======================
     let appData = { students: [], daily: [], bonus: [] };
     let editIdx = null;
     let duckCount = 0;
@@ -438,18 +438,18 @@
             video.onended = hideSplash; 
             setTimeout(hideSplash, 5000); 
             initApp(); 
-            initAudio(); // Kích hoạt audio context sớm
+            initAudio();
         });
     });
 
-    // Ghi đè các hàm để thêm âm thanh
-    const originalShowPage = showPage;
-    showPage = function(pageId) {
-        playClickSound();
-        originalShowPage(pageId);
-    };
+    // ======================= CÁC HÀM CHỨC NĂNG CHÍNH =======================
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+    }
 
     function showPage(pageId) {
+        playClickSound();
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
@@ -457,20 +457,15 @@
         renderAll();
     }
 
-    const originalToggleFullLeaderboard = toggleFullLeaderboard;
-    toggleFullLeaderboard = function() {
-        playClickSound();
-        originalToggleFullLeaderboard();
-    };
-
     function toggleFullLeaderboard() {
+        playClickSound();
         const list = document.getElementById('full-leaderboard');
         const btn = document.getElementById('btnViewAll');
         list.classList.toggle('show');
         btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
 
-    // Daily Form
+    // --- DAILY ---
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         playSubmitSound();
@@ -513,12 +508,13 @@
         appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
             const xpSign = l.xp > 0 ? '+' : '';
-            list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" style="float:right; background:none; border:none;">🗑️</button>
-                <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
-                <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${l.notes}</div></div>`;
+            list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" style="float:right; background:none; border:none; cursor:pointer;">🗑️</button>
+                <strong>${escapeHtml(l.name)}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
+                <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${escapeHtml(l.notes)}</div></div>`;
         });
     }
 
+    // --- MONTHLY ---
     function getStatus(txt, override) {
         if (override !== "auto") {
             const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
@@ -530,7 +526,6 @@
         return { label: "Developing", color: "#ffa000" };
     }
 
-    // Monthly Form
     document.getElementById('studentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         playSubmitSound();
@@ -564,13 +559,8 @@
         });
     }
 
-    const originalEditStudent = editStudent;
-    editStudent = function(i) {
-        playClickSound();
-        originalEditStudent(i);
-    };
-
     function editStudent(i) {
+        playClickSound();
         const s = appData.students[i];
         document.getElementById('name').value = s.name; document.getElementById('sti').value = s.sti;
         document.getElementById('unit').value = s.unit; document.getElementById('course').value = s.course;
@@ -580,12 +570,12 @@
         editIdx = i; window.scrollTo(0,0);
     }
 
+    // --- BONUS ---
     function duckSecret() {
         duckCount++;
         if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
     }
 
-    // Bonus Form
     document.getElementById('bonusForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         playSubmitSound();
@@ -597,41 +587,40 @@
         const list = document.getElementById('bonusList');
         list.innerHTML = '';
         appData.bonus.forEach((b, i) => {
-            list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>`:''}
+            list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right; cursor:pointer;">❌</button>`:''}
                 <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem;">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p></div>`;
         });
     }
 
-    const originalDeleteItem = deleteItem;
-    deleteItem = async function(type, i) {
+    // --- DELETE (đã sửa lỗi) ---
+    async function deleteItem(type, i) {
         playClickSound();
-        if(!confirm("Delete?")) return;
+        if(!confirm("Delete this item?")) return;
         if(type === 'daily') appData.daily.splice(i, 1);
         if(type === 'monthly') appData.students.splice(i, 1);
         if(type === 'bonus') appData.bonus.splice(i, 1);
-        await triggerSave(); renderAll();
-    };
+        await triggerSave(); 
+        renderAll();
+    }
 
-    const originalToggleTheme = toggleTheme;
-    toggleTheme = function() {
-        playClickSound();
-        originalToggleTheme();
-    };
-
+    // --- THEME ---
     function toggleTheme() {
+        playClickSound();
         const isLight = document.body.getAttribute('data-theme') === 'light';
         document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
         document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
 
-    function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
-    document.getElementById('d-date').valueAsDate = new Date();
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+    function renderAll() { 
+        renderDaily(); 
+        renderMonthly(); 
+        renderBonus(); 
     }
 
+    // Khởi tạo ngày mặc định
+    document.getElementById('d-date').valueAsDate = new Date();
+
+    // ======================= EXPORT PDF =======================
     function populateStudentSelect() {
         const select = document.getElementById('studentSelectForPdf');
         if (!select) return;
@@ -713,7 +702,7 @@
         setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
     }
 
-    // Khởi tạo các listener còn lại
+    // ======================= ĐĂNG KÝ SỰ KIỆN CUỐI CÙNG =======================
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('refreshStudentListBtn')?.addEventListener('click', () => {
             playClickSound();
