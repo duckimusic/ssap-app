@@ -309,6 +309,74 @@
 </div>
 
 <script>
+    // ======================= ÂM THANH TƯƠNG TÁC =======================
+    let audioCtx = null;
+
+    function initAudio() {
+        if (audioCtx) return;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch (e) {
+            console.warn("Web Audio API không được hỗ trợ.");
+        }
+    }
+
+    function playClickSound() {
+        if (!audioCtx) {
+            initAudio();
+            if (!audioCtx) return;
+        }
+        try {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.value = 750;
+
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now + 0.08);
+        } catch (e) {}
+    }
+
+    function playSubmitSound() {
+        if (!audioCtx) {
+            initAudio();
+            if (!audioCtx) return;
+        }
+        try {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.value = 1100;
+
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now + 0.12);
+        } catch (e) {}
+    }
+
+    // ======================= LOGIC CHÍNH =======================
     let appData = { students: [], daily: [], bonus: [] };
     let editIdx = null;
     let duckCount = 0;
@@ -370,8 +438,16 @@
             video.onended = hideSplash; 
             setTimeout(hideSplash, 5000); 
             initApp(); 
+            initAudio(); // Kích hoạt audio context sớm
         });
     });
+
+    // Ghi đè các hàm để thêm âm thanh
+    const originalShowPage = showPage;
+    showPage = function(pageId) {
+        playClickSound();
+        originalShowPage(pageId);
+    };
 
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -381,6 +457,12 @@
         renderAll();
     }
 
+    const originalToggleFullLeaderboard = toggleFullLeaderboard;
+    toggleFullLeaderboard = function() {
+        playClickSound();
+        originalToggleFullLeaderboard();
+    };
+
     function toggleFullLeaderboard() {
         const list = document.getElementById('full-leaderboard');
         const btn = document.getElementById('btnViewAll');
@@ -388,8 +470,10 @@
         btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
 
+    // Daily Form
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        playSubmitSound();
         const xpInput = document.getElementById('d-xp').value;
         const entry = {
             name: document.getElementById('d-name').value.trim(),
@@ -446,8 +530,10 @@
         return { label: "Developing", color: "#ffa000" };
     }
 
+    // Monthly Form
     document.getElementById('studentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        playSubmitSound();
         const data = {
             name: document.getElementById('name').value, sti: document.getElementById('sti').value,
             unit: document.getElementById('unit').value, course: document.getElementById('course').value,
@@ -478,6 +564,12 @@
         });
     }
 
+    const originalEditStudent = editStudent;
+    editStudent = function(i) {
+        playClickSound();
+        originalEditStudent(i);
+    };
+
     function editStudent(i) {
         const s = appData.students[i];
         document.getElementById('name').value = s.name; document.getElementById('sti').value = s.sti;
@@ -493,8 +585,10 @@
         if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
     }
 
+    // Bonus Form
     document.getElementById('bonusForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        playSubmitSound();
         appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
         await triggerSave(); e.target.reset(); renderBonus();
     });
@@ -508,13 +602,21 @@
         });
     }
 
-    async function deleteItem(type, i) {
+    const originalDeleteItem = deleteItem;
+    deleteItem = async function(type, i) {
+        playClickSound();
         if(!confirm("Delete?")) return;
         if(type === 'daily') appData.daily.splice(i, 1);
         if(type === 'monthly') appData.students.splice(i, 1);
         if(type === 'bonus') appData.bonus.splice(i, 1);
         await triggerSave(); renderAll();
-    }
+    };
+
+    const originalToggleTheme = toggleTheme;
+    toggleTheme = function() {
+        playClickSound();
+        originalToggleTheme();
+    };
 
     function toggleTheme() {
         const isLight = document.body.getAttribute('data-theme') === 'light';
@@ -525,7 +627,6 @@
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
 
-    // ======================= FIXED EXPORT PDF (NO OVERLAP, NO DATE) =======================
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
@@ -559,7 +660,6 @@
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
 
-        // Create print container
         const printDiv = document.createElement('div');
         printDiv.className = 'print-area';
         printDiv.style.position = 'absolute';
@@ -613,14 +713,28 @@
         setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
     }
 
+    // Khởi tạo các listener còn lại
     document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('refreshStudentListBtn')?.addEventListener('click', populateStudentSelect);
-        document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPDFViaPrint);
+        document.getElementById('refreshStudentListBtn')?.addEventListener('click', () => {
+            playClickSound();
+            populateStudentSelect();
+        });
+        document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
+            playClickSound();
+            exportToPDFViaPrint();
+        });
         populateStudentSelect();
+        
+        // Kích hoạt audio context khi có tương tác đầu tiên
+        document.body.addEventListener('click', function initAudioOnFirstClick() {
+            initAudio();
+            document.body.removeEventListener('click', initAudioOnFirstClick);
+        }, { once: true });
     });
 
     const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
     if (monthlyTabBtn) monthlyTabBtn.addEventListener('click', () => setTimeout(populateStudentSelect, 50));
+
 </script>
 </body>
 </html>
