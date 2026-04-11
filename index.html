@@ -166,20 +166,33 @@
 
         /* --- FIXED PRINT STYLES - NO OVERLAP --- */
         @media print {
-            body * { visibility: hidden; }
-            .print-area, .print-area * { visibility: visible; }
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
             .print-area {
                 position: absolute;
-                top: 0; left: 0; width: 100%;
-                margin: 0; padding: 20px;
-                background: white; color: black;
-                display: block; overflow: visible;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white;
+                color: black;
+                display: block;
+                overflow: visible;
                 box-sizing: border-box;
             }
             .print-area .student-card {
-                break-inside: avoid; page-break-inside: avoid;
-                border: 1px solid #ccc; margin-bottom: 20px !important;
-                display: block; clear: both; overflow: visible;
+                break-inside: avoid;
+                page-break-inside: avoid;
+                border: 1px solid #ccc;
+                margin-bottom: 20px !important;
+                display: block;
+                clear: both;
+                overflow: visible;
                 page-break-after: avoid;
             }
         }
@@ -217,6 +230,7 @@
         <div class="leaderboard" id="xpLeaderboard">
              <div id="alien-container"><span id="leaderboard-alien">👾</span></div>
              <div id="leaderboard-content">🏆 XP Leaderboard: Loading...</div>
+
              <button class="view-all-btn" onclick="toggleFullLeaderboard()" id="btnViewAll">View Full Rankings</button>
              <div id="full-leaderboard" class="full-rank-list"></div>
         </div>
@@ -265,12 +279,14 @@
         <input type="text" id="searchInput" class="search-input" style="width:100%; padding:10px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;" placeholder="Search names..." oninput="renderMonthly()">
         <div id="studentList"></div>
 
+        <!-- EXPORT PDF SECTION (fixed overlap) -->
         <div class="input-card" id="pdfExportCard" style="margin-top: 20px; background: var(--card);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <label style="margin:0; font-size: 1rem;">📄 Export Students to PDF</label>
                 <button id="refreshStudentListBtn" style="background: var(--accent); border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer;">⟳ Refresh List</button>
             </div>
-            <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 8px;"></select>
+            <select id="studentSelectForPdf" multiple size="5" style="width:100%; margin-bottom: 15px; padding: 8px;">
+            </select>
             <button id="exportPdfBtn" class="btn-add" style="background: #ff9800; margin-top: 0;">Export Selected to PDF (Print)</button>
             <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 10px;">💡 Hold Ctrl (or Cmd) to select multiple students → click button → choose "Save as PDF".</p>
         </div>
@@ -293,387 +309,318 @@
 </div>
 
 <script>
-    (function(){
-        // ---------- ÂM THANH ----------
-        let audioCtx = null;
-        function initAudio() {
-            if (audioCtx) return;
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-            } catch (e) { console.warn("Web Audio API not supported"); }
-        }
-        function playClickSound() {
-            if (!audioCtx) { initAudio(); if (!audioCtx) return; }
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = 750;
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(now + 0.08);
-            } catch (e) {}
-        }
-        function playSubmitSound() {
-            if (!audioCtx) { initAudio(); if (!audioCtx) return; }
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = 1100;
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(now + 0.12);
-            } catch (e) {}
-        }
+    let appData = { students: [], daily: [], bonus: [] };
+    let editIdx = null;
+    let duckCount = 0;
+    let isAdmin = false;
 
-        // ---------- DỮ LIỆU & SYNC CLOUD ----------
-        let appData = { students: [], daily: [], bonus: [] };
-        let editIdx = null;
-        let duckCount = 0;
-        let isAdmin = false;
+    window.addEventListener('online', () => { initApp(); });
+    window.addEventListener('offline', () => { console.warn("Offline"); });
 
-        // Hàm gọi API Cloudflare KV
-        async function syncCloud(method, data = null) {
-            const options = { method, headers: { 'Content-Type': 'application/json' } };
-            if (data) options.body = JSON.stringify(data);
-            try {
-                const res = await fetch('/api/data', options);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return method === 'GET' ? await res.json() : null;
-            } catch (err) {
-                console.error('Cloud sync failed:', err);
-                alert('⚠️ Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.');
-                throw err;
-            }
-        }
+    async function syncCloud(method, data = null) {
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
+        if (data) options.body = JSON.stringify(data);
+        const res = await fetch('/api/data', options);
+        return method === 'GET' ? await res.json() : null;
+    }
 
-        // Khởi tạo ứng dụng - chỉ lấy từ cloud
-        async function initApp() {
-            try {
-                const cloudData = await syncCloud('GET');
-                if (cloudData && typeof cloudData === 'object') {
-                    appData = { students: cloudData.students || [], daily: cloudData.daily || [], bonus: cloudData.bonus || [] };
-                } else {
-                    appData = { students: [], daily: [], bonus: [] };
-                }
-            } catch (e) {
-                appData = { students: [], daily: [], bonus: [] };
-            }
+    async function initApp() {
+        if (!navigator.onLine) { loadLocalBackup(); renderAll(); return; }
+        try {
+            const cloudData = await syncCloud('GET');
+            if (cloudData && cloudData.students) appData = cloudData;
+            else loadLocalBackup();
             renderAll();
-        }
+        } catch (e) { loadLocalBackup(); renderAll(); }
+    }
 
-        // Lưu dữ liệu lên cloud (không dùng localStorage)
-        async function triggerSave() {
-            try {
-                await syncCloud('POST', appData);
-            } catch (e) {
-                // Lỗi đã được xử lý trong syncCloud
-            }
-        }
+    function loadLocalBackup() {
+        appData.students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
+        appData.daily = JSON.parse(localStorage.getItem('stu_daily')) || [];
+        appData.bonus = JSON.parse(localStorage.getItem('stu_bonus')) || [];
+    }
 
-        // ---------- HELPER ----------
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
-        }
+    async function triggerSave() {
+        if (navigator.onLine) await syncCloud('POST', appData);
+        localStorage.setItem('stu_final_v2', JSON.stringify(appData.students));
+        localStorage.setItem('stu_daily', JSON.stringify(appData.daily));
+        localStorage.setItem('stu_bonus', JSON.stringify(appData.bonus));
+    }
 
-        // ---------- HIỂN THỊ TRANG (có âm thanh) ----------
-        window.showPage = function(pageId) {
-            playClickSound();
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('page-' + pageId).classList.add('active');
-            const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.textContent.toLowerCase().includes(pageId));
-            if (activeBtn) activeBtn.classList.add('active');
-            renderAll();
+    function hideSplash() {
+        document.getElementById('splash-screen').classList.add('splash-hidden');
+        document.body.classList.add('app-loaded');
+    }
+
+    window.addEventListener('load', () => {
+        const startBtn = document.getElementById('start-btn');
+        const video = document.getElementById('splash-video');
+        const logo = document.getElementById('splash-logo');
+        const audio = document.getElementById('startup-sound');
+        document.getElementById('loader').style.display = 'none';
+        startBtn.style.display = 'inline-block';
+
+        startBtn.addEventListener('click', () => {
+            audio.play().catch(e => {}); 
+            logo.style.display = 'none';
+            document.querySelector('.logo-text').style.display = 'none';
+            video.style.display = 'block';
+            video.play().catch(e => hideSplash());
+            startBtn.style.display = 'none';
+            video.onended = hideSplash; 
+            setTimeout(hideSplash, 5000); 
+            initApp(); 
+        });
+    });
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        renderAll();
+    }
+
+    function toggleFullLeaderboard() {
+        const list = document.getElementById('full-leaderboard');
+        const btn = document.getElementById('btnViewAll');
+        list.classList.toggle('show');
+        btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
+    }
+
+    document.getElementById('dailyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const xpInput = document.getElementById('d-xp').value;
+        const entry = {
+            name: document.getElementById('d-name').value.trim(),
+            sti: document.getElementById('d-sti').value,
+            date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
+            xp: parseInt(xpInput) || 0,
+            notes: document.getElementById('d-notes').value
         };
+        appData.daily.unshift(entry);
+        await triggerSave(); 
+        e.target.reset(); 
+        document.getElementById('d-xp').value = "0";
+        renderDaily();
+    });
 
-        window.toggleFullLeaderboard = function() {
-            playClickSound();
-            const list = document.getElementById('full-leaderboard');
-            const btn = document.getElementById('btnViewAll');
-            list.classList.toggle('show');
-            btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
+    function renderDaily() {
+        const list = document.getElementById('dailyList');
+        const leaderboardUI = document.getElementById('leaderboard-content');
+        const fullLeaderboardUI = document.getElementById('full-leaderboard');
+        const search = document.getElementById('searchDaily').value.toLowerCase();
+        list.innerHTML = '';
+
+        const totals = {};
+        appData.daily.forEach(l => { totals[l.name] = (totals[l.name] || 0) + l.xp; });
+        const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+        const top = allSorted.slice(0,3);
+
+        if(top.length > 0) {
+            leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">TOP PERFORMERS</div>
+                <div class="leaderboard-ranks">${top.map((t,i)=>`<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
+            fullLeaderboardUI.innerHTML = allSorted.map((t,i)=>`<div class="rank-item-mini"><span>${i+1}. ${t[0]}</span><span style="color:var(--xp-gold);">${t[1]} XP</span></div>`).join('');
+        } else {
+            leaderboardUI.innerHTML = "🏆 No XP data yet.";
+            fullLeaderboardUI.innerHTML = "";
+        }
+
+        appData.daily.forEach((l, i) => {
+            if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
+            const xpSign = l.xp > 0 ? '+' : '';
+            list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" style="float:right; background:none; border:none;">🗑️</button>
+                <strong>${l.name}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
+                <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${l.notes}</div></div>`;
+        });
+    }
+
+    function getStatus(txt, override) {
+        if (override !== "auto") {
+            const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
+            return { label: map[override][0], color: map[override][1] };
+        }
+        const t = (txt || "").toLowerCase();
+        if (["tốt", "vượt trội", "good", "excellent"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
+        if (["yếu", "cần hỗ trợ", "support", "weak"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
+        return { label: "Developing", color: "#ffa000" };
+    }
+
+    document.getElementById('studentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            name: document.getElementById('name').value, sti: document.getElementById('sti').value,
+            unit: document.getElementById('unit').value, course: document.getElementById('course').value,
+            ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
+            overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value
         };
+        if (editIdx !== null) { appData.students[editIdx] = data; editIdx = null; } 
+        else { appData.students.unshift(data); }
+        await triggerSave();
+        e.target.reset(); renderMonthly();
+    });
 
-        window.toggleTheme = function() {
-            playClickSound();
-            const isLight = document.body.getAttribute('data-theme') === 'light';
-            document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
-            document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
-        };
+    function renderMonthly() {
+        const list = document.getElementById('studentList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        list.innerHTML = '';
+        appData.students.forEach((s, i) => {
+            if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
+            const status = getStatus(s.overall, s.statusOverride || "auto");
+            list.innerHTML += `<div class="student-card">
+                <div style="display:flex; justify-content:space-between;"><h3>${escapeHtml(s.name)} <span style="opacity:0.5;">#${escapeHtml(s.sti||'000')}</span></h3>
+                <div><span onclick="deleteItem('monthly', ${i})" style="cursor:pointer;">🗑️</span> <span onclick="editStudent(${i})" style="cursor:pointer;">⋮</span></div></div>
+                <div class="section-label">Listening & Speaking</div><div>${escapeHtml(s.ls||'N/A')}</div>
+                <div class="section-label">Reading & Writing</div><div>${escapeHtml(s.rw||'N/A')}</div>
+                <div class="section-label">Overall</div><div>${escapeHtml(s.overall||'N/A')}</div>
+                <div class="status-badge" style="background:${status.color}">${status.label}</div>
+            </div>`;
+        });
+    }
 
-        // ---------- XOÁ (đảm bảo hoạt động) ----------
-        window.deleteItem = async function(type, index) {
-            playClickSound();
-            if (!confirm("Delete this item?")) return;
-            if (type === 'daily') appData.daily.splice(index, 1);
-            else if (type === 'monthly') appData.students.splice(index, 1);
-            else if (type === 'bonus') appData.bonus.splice(index, 1);
-            await triggerSave();
-            renderAll();
-        };
+    function editStudent(i) {
+        const s = appData.students[i];
+        document.getElementById('name').value = s.name; document.getElementById('sti').value = s.sti;
+        document.getElementById('unit').value = s.unit; document.getElementById('course').value = s.course;
+        document.getElementById('ls').value = s.ls; document.getElementById('rw').value = s.rw;
+        document.getElementById('overall').value = s.overall;
+        document.getElementById('statusOverride').value = s.statusOverride || "auto";
+        editIdx = i; window.scrollTo(0,0);
+    }
 
-        // ---------- SỬA MONTHLY ----------
-        window.editStudent = function(index) {
-            playClickSound();
-            const s = appData.students[index];
-            if (!s) return;
-            document.getElementById('name').value = s.name || '';
-            document.getElementById('sti').value = s.sti || '';
-            document.getElementById('unit').value = s.unit || '';
-            document.getElementById('course').value = s.course || '';
-            document.getElementById('ls').value = s.ls || '';
-            document.getElementById('rw').value = s.rw || '';
-            document.getElementById('overall').value = s.overall || '';
-            document.getElementById('statusOverride').value = s.statusOverride || 'auto';
-            editIdx = index;
-            window.scrollTo(0,0);
-        };
+    function duckSecret() {
+        duckCount++;
+        if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
+    }
 
-        window.duckSecret = function() {
-            duckCount++;
-            if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
-        };
+    document.getElementById('bonusForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
+        await triggerSave(); e.target.reset(); renderBonus();
+    });
 
-        // ---------- RENDER DAILY ----------
-        function renderDaily() {
-            const list = document.getElementById('dailyList');
-            const leaderboardUI = document.getElementById('leaderboard-content');
-            const fullLeaderboardUI = document.getElementById('full-leaderboard');
-            const search = document.getElementById('searchDaily').value.toLowerCase();
-            list.innerHTML = '';
+    function renderBonus() {
+        const list = document.getElementById('bonusList');
+        list.innerHTML = '';
+        appData.bonus.forEach((b, i) => {
+            list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right">❌</button>`:''}
+                <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem;">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p></div>`;
+        });
+    }
 
-            const totals = {};
-            appData.daily.forEach(l => { totals[l.name] = (totals[l.name] || 0) + l.xp; });
-            const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
-            const top = allSorted.slice(0,3);
+    async function deleteItem(type, i) {
+        if(!confirm("Delete?")) return;
+        if(type === 'daily') appData.daily.splice(i, 1);
+        if(type === 'monthly') appData.students.splice(i, 1);
+        if(type === 'bonus') appData.bonus.splice(i, 1);
+        await triggerSave(); renderAll();
+    }
 
-            if(top.length > 0) {
-                leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">TOP PERFORMERS</div>
-                    <div class="leaderboard-ranks">${top.map((t,i)=>`<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
-                fullLeaderboardUI.innerHTML = allSorted.map((t,i)=>`<div class="rank-item-mini"><span>${i+1}. ${t[0]}</span><span style="color:var(--xp-gold);">${t[1]} XP</span></div>`).join('');
-            } else {
-                leaderboardUI.innerHTML = "🏆 No XP data yet.";
-                fullLeaderboardUI.innerHTML = "";
-            }
+    function toggleTheme() {
+        const isLight = document.body.getAttribute('data-theme') === 'light';
+        document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+        document.getElementById('themeText').innerText = isLight ? "☀️ Light" : "🌙 Dark";
+    }
 
-            appData.daily.forEach((l, i) => {
-                if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
-                const xpSign = l.xp > 0 ? '+' : '';
-                list.innerHTML += `<div class="student-card"><button onclick="deleteItem('daily', ${i})" style="float:right; background:none; border:none; cursor:pointer;">🗑️</button>
-                    <strong>${escapeHtml(l.name)}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
-                    <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${escapeHtml(l.notes)}</div></div>`;
-            });
+    function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
+    document.getElementById('d-date').valueAsDate = new Date();
+
+    // ======================= FIXED EXPORT PDF (NO OVERLAP, NO DATE) =======================
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+    }
+
+    function populateStudentSelect() {
+        const select = document.getElementById('studentSelectForPdf');
+        if (!select) return;
+        select.innerHTML = '';
+        appData.students.forEach((student, idx) => {
+            const option = document.createElement('option');
+            option.value = idx;
+            option.textContent = `${student.name} (${student.sti || 'No STI'})`;
+            select.appendChild(option);
+        });
+        if (appData.students.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = 'No students yet';
+            option.disabled = true;
+            select.appendChild(option);
         }
+    }
 
-        // ---------- RENDER MONTHLY ----------
-        function getStatus(txt, override) {
-            if (override !== "auto") {
-                const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
-                return { label: map[override][0], color: map[override][1] };
-            }
-            const t = (txt || "").toLowerCase();
-            if (["tốt", "vượt trội", "good", "excellent"].some(w => t.includes(w))) return { label: "Excelling", color: "#2e7d32" };
-            if (["yếu", "cần hỗ trợ", "support", "weak"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
-            return { label: "Developing", color: "#ffa000" };
+    function exportToPDFViaPrint() {
+        const select = document.getElementById('studentSelectForPdf');
+        const selectedIndices = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+        if (selectedIndices.length === 0) {
+            alert('Please select at least one student.');
+            return;
         }
+        const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
+        if (studentsToExport.length === 0) return;
 
-        function renderMonthly() {
-            const list = document.getElementById('studentList');
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            list.innerHTML = '';
-            appData.students.forEach((s, i) => {
-                if (!s.name.toLowerCase().includes(search) && !s.sti.toLowerCase().includes(search)) return;
-                const status = getStatus(s.overall, s.statusOverride || "auto");
-                list.innerHTML += `<div class="student-card">
-                    <div style="display:flex; justify-content:space-between;"><h3>${escapeHtml(s.name)} <span style="opacity:0.5;">#${escapeHtml(s.sti||'000')}</span></h3>
-                    <div><span onclick="deleteItem('monthly', ${i})" style="cursor:pointer; margin-right:10px;">🗑️</span> <span onclick="editStudent(${i})" style="cursor:pointer;">⋮</span></div></div>
-                    <div class="section-label">Listening & Speaking</div><div>${escapeHtml(s.ls||'N/A')}</div>
-                    <div class="section-label">Reading & Writing</div><div>${escapeHtml(s.rw||'N/A')}</div>
-                    <div class="section-label">Overall</div><div>${escapeHtml(s.overall||'N/A')}</div>
-                    <div class="status-badge" style="background:${status.color}">${status.label}</div>
-                </div>`;
-            });
-        }
+        // Create print container
+        const printDiv = document.createElement('div');
+        printDiv.className = 'print-area';
+        printDiv.style.position = 'absolute';
+        printDiv.style.top = '0';
+        printDiv.style.left = '0';
+        printDiv.style.width = '100%';
+        printDiv.style.backgroundColor = 'white';
+        printDiv.style.padding = '20px';
+        printDiv.style.boxSizing = 'border-box';
+        printDiv.style.zIndex = '99999';
 
-        function renderBonus() {
-            const list = document.getElementById('bonusList');
-            list.innerHTML = '';
-            appData.bonus.forEach((b, i) => {
-                list.innerHTML += `<div class="comment-card">${isAdmin?`<button onclick="deleteItem('bonus', ${i})" style="float:right; cursor:pointer;">❌</button>`:''}
-                    <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem;">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p></div>`;
-            });
-        }
+        const title = document.createElement('h1');
+        title.textContent = 'SSAP 2.0 - Student Report';
+        title.style.textAlign = 'center';
+        title.style.color = '#2e7d32';
+        title.style.marginBottom = '30px';
+        printDiv.appendChild(title);
 
-        function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
+        studentsToExport.forEach(student => {
+            const status = getStatus(student.overall, student.statusOverride || "auto");
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.style.background = '#fff';
+            card.style.border = '1px solid #ccc';
+            card.style.borderRadius = '12px';
+            card.style.padding = '20px';
+            card.style.marginBottom = '20px';
+            card.style.pageBreakInside = 'avoid';
+            card.style.breakInside = 'avoid';
+            card.style.display = 'block';
+            card.style.clear = 'both';
+            card.style.overflow = 'visible';
 
-        // ---------- EXPORT PDF ----------
-        function populateStudentSelect() {
-            const select = document.getElementById('studentSelectForPdf');
-            if (!select) return;
-            select.innerHTML = '';
-            appData.students.forEach((student, idx) => {
-                const option = document.createElement('option');
-                option.value = idx;
-                option.textContent = `${student.name} (${student.sti || 'No STI'})`;
-                select.appendChild(option);
-            });
-            if (appData.students.length === 0) {
-                const option = document.createElement('option');
-                option.textContent = 'No students yet';
-                option.disabled = true;
-                select.appendChild(option);
-            }
-        }
-
-        function exportToPDFViaPrint() {
-            const select = document.getElementById('studentSelectForPdf');
-            const selectedIndices = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
-            if (selectedIndices.length === 0) { alert('Please select at least one student.'); return; }
-            const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
-            if (studentsToExport.length === 0) return;
-
-            const printDiv = document.createElement('div');
-            printDiv.className = 'print-area';
-            printDiv.style.cssText = 'position:absolute; top:0; left:0; width:100%; background:white; padding:20px; box-sizing:border-box; z-index:99999;';
-            const title = document.createElement('h1');
-            title.textContent = 'SSAP 2.0 - Student Report';
-            title.style.cssText = 'text-align:center; color:#2e7d32; margin-bottom:30px;';
-            printDiv.appendChild(title);
-
-            studentsToExport.forEach(student => {
-                const status = getStatus(student.overall, student.statusOverride || "auto");
-                const card = document.createElement('div');
-                card.className = 'student-card';
-                card.style.cssText = 'background:#fff; border:1px solid #ccc; border-radius:12px; padding:20px; margin-bottom:20px; page-break-inside:avoid; break-inside:avoid; display:block; clear:both; overflow:visible;';
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                        <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5;">#${escapeHtml(student.sti || '000')}</span></h3></div>
-                    </div>
-                    <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Listening & Speaking</div>
-                    <div>${escapeHtml(student.ls || 'N/A')}</div>
-                    <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Reading & Writing</div>
-                    <div>${escapeHtml(student.rw || 'N/A')}</div>
-                    <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Overall</div>
-                    <div>${escapeHtml(student.overall || 'N/A')}</div>
-                    <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
-                `;
-                printDiv.appendChild(card);
-            });
-            document.body.appendChild(printDiv);
-            window.print();
-            setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
-        }
-
-        // ---------- SPLASH & KHỞI ĐỘNG ----------
-        function hideSplash() {
-            document.getElementById('splash-screen').classList.add('splash-hidden');
-            document.body.classList.add('app-loaded');
-        }
-
-        // ---------- ĐĂNG KÝ SỰ KIỆN ----------
-        document.addEventListener('DOMContentLoaded', () => {
-            // Daily form
-            document.getElementById('dailyForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                playSubmitSound();
-                const xpInput = document.getElementById('d-xp').value;
-                const entry = {
-                    name: document.getElementById('d-name').value.trim(),
-                    sti: document.getElementById('d-sti').value,
-                    date: document.getElementById('d-date').value || new Date().toISOString().split('T')[0],
-                    xp: parseInt(xpInput) || 0,
-                    notes: document.getElementById('d-notes').value
-                };
-                appData.daily.unshift(entry);
-                await triggerSave();
-                e.target.reset();
-                document.getElementById('d-xp').value = "0";
-                renderDaily();
-            });
-
-            // Monthly form
-            document.getElementById('studentForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                playSubmitSound();
-                const data = {
-                    name: document.getElementById('name').value, sti: document.getElementById('sti').value,
-                    unit: document.getElementById('unit').value, course: document.getElementById('course').value,
-                    ls: document.getElementById('ls').value, rw: document.getElementById('rw').value,
-                    overall: document.getElementById('overall').value, statusOverride: document.getElementById('statusOverride').value
-                };
-                if (editIdx !== null) { appData.students[editIdx] = data; editIdx = null; }
-                else { appData.students.unshift(data); }
-                await triggerSave();
-                e.target.reset();
-                renderMonthly();
-            });
-
-            // Bonus form
-            document.getElementById('bonusForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                playSubmitSound();
-                appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
-                await triggerSave();
-                e.target.reset();
-                renderBonus();
-            });
-
-            // PDF controls
-            document.getElementById('refreshStudentListBtn').addEventListener('click', () => {
-                playClickSound();
-                populateStudentSelect();
-            });
-            document.getElementById('exportPdfBtn').addEventListener('click', () => {
-                playClickSound();
-                exportToPDFViaPrint();
-            });
-
-            // Splash start
-            const startBtn = document.getElementById('start-btn');
-            const video = document.getElementById('splash-video');
-            const logo = document.getElementById('splash-logo');
-            const audio = document.getElementById('startup-sound');
-            document.getElementById('loader').style.display = 'none';
-            startBtn.style.display = 'inline-block';
-            startBtn.addEventListener('click', () => {
-                audio.play().catch(e => {});
-                logo.style.display = 'none';
-                document.querySelector('.logo-text').style.display = 'none';
-                video.style.display = 'block';
-                video.play().catch(e => hideSplash());
-                startBtn.style.display = 'none';
-                video.onended = hideSplash;
-                setTimeout(hideSplash, 5000);
-                initApp();
-                initAudio();
-            });
-
-            document.getElementById('d-date').valueAsDate = new Date();
-            populateStudentSelect();
-
-            document.body.addEventListener('click', function initAudioOnFirstClick() {
-                initAudio();
-                document.body.removeEventListener('click', initAudioOnFirstClick);
-            }, { once: true });
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                    <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5;">#${escapeHtml(student.sti || '000')}</span></h3></div>
+                </div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Listening & Speaking</div>
+                <div>${escapeHtml(student.ls || 'N/A')}</div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Reading & Writing</div>
+                <div>${escapeHtml(student.rw || 'N/A')}</div>
+                <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; margin-top:15px; color:#2e7d32;">Overall</div>
+                <div>${escapeHtml(student.overall || 'N/A')}</div>
+                <div style="font-size:0.6rem; color:white; padding:3px 8px; border-radius:4px; display:inline-block; margin-top:10px; background:${status.color}">${status.label}</div>
+            `;
+            printDiv.appendChild(card);
         });
 
-        const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
-        if (monthlyTabBtn) monthlyTabBtn.addEventListener('click', () => setTimeout(populateStudentSelect, 50));
-    })();
+        document.body.appendChild(printDiv);
+        window.print();
+        setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('refreshStudentListBtn')?.addEventListener('click', populateStudentSelect);
+        document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPDFViaPrint);
+        populateStudentSelect();
+    });
+
+    const monthlyTabBtn = document.querySelector('.tab-btn[onclick="showPage(\'monthly\')"]');
+    if (monthlyTabBtn) monthlyTabBtn.addEventListener('click', () => setTimeout(populateStudentSelect, 50));
 </script>
 </body>
 </html>
