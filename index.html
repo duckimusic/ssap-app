@@ -306,10 +306,13 @@
 </div>
 
 <script>
-    // ----------------------------- 8-BIT SOUND ENGINE + CARTOON PIPE -------------------------
+    // ----------------------------- SOUND SETUP ---------------------------------
+    // CUSTOM PIPE SOUND FILE (uploaded to GitHub, placed in same folder as HTML)
+    const CUSTOM_PIPE_URL = "cartoon pipe.wav";  // change to actual path if needed
+    
     let audioCtx = null;
     let soundAllowed = false;
-
+    
     function initAudio() {
         if (audioCtx) return audioCtx;
         try {
@@ -317,13 +320,12 @@
             return audioCtx;
         } catch(e) { console.warn("Web Audio not supported"); return null; }
     }
-
-    // Play retro power-up sound (8-bit style, ascending arpeggio)
+    
+    // Play retro power-up sound (8-bit style, ascending arpeggio) - for normal buttons
     function playPowerUpSound() {
         if (!soundAllowed) return;
         const ctx = initAudio();
         if (!ctx) return;
-        // resume if suspended
         if (ctx.state === 'suspended') ctx.resume();
         const now = ctx.currentTime;
         const gainNode = ctx.createGain();
@@ -331,8 +333,7 @@
         gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
         gainNode.connect(ctx.destination);
         
-        // melody: 8-bit powerup: three rising notes
-        const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
         freqs.forEach((freq, idx) => {
             const osc = ctx.createOscillator();
             osc.type = 'square';
@@ -341,7 +342,6 @@
             osc.start(now + idx * 0.08);
             osc.stop(now + idx * 0.08 + 0.25);
         });
-        // extra short zap
         const osc2 = ctx.createOscillator();
         osc2.type = 'triangle';
         osc2.frequency.value = 880;
@@ -349,9 +349,25 @@
         osc2.start(now + 0.2);
         osc2.stop(now + 0.35);
     }
-
-    // Cartoon pipe sound (descending "boing" / fall)
-    function playPipeSound() {
+    
+    // Play custom cartoon pipe.wav file for negative XP and delete actions
+    function playCustomPipeSound() {
+        if (!soundAllowed) return;
+        try {
+            const audio = new Audio(CUSTOM_PIPE_URL);
+            audio.volume = 0.5;
+            audio.play().catch(err => {
+                // fallback to synthesized pipe if file missing
+                console.warn("Custom pipe sound failed, using synth fallback", err);
+                playSynthPipeFallback();
+            });
+        } catch(e) {
+            playSynthPipeFallback();
+        }
+    }
+    
+    // Fallback synthesized pipe (descending "boing") - used if custom file unavailable
+    function playSynthPipeFallback() {
         if (!soundAllowed) return;
         const ctx = initAudio();
         if (!ctx) return;
@@ -361,7 +377,6 @@
         gain.gain.setValueAtTime(0.3, now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
         gain.connect(ctx.destination);
-        
         const osc = ctx.createOscillator();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(600, now);
@@ -369,44 +384,41 @@
         osc.connect(gain);
         osc.start(now);
         osc.stop(now + 0.45);
-        
-        // add a little resonance
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.value = 800;
         osc.connect(filter);
         filter.connect(gain);
     }
-
-    // enable sounds after first user interaction
+    
+    // Enable sounds on first user interaction (except start button)
     function enableSoundsOnFirstClick() {
         if (soundAllowed) return;
         soundAllowed = true;
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        // optional short beep to confirm
         const ctx = initAudio();
         if (ctx && ctx.state !== 'running') ctx.resume();
     }
+    // Global enable after any click/touch (excluding start button by logic)
     document.body.addEventListener('click', () => { enableSoundsOnFirstClick(); }, { once: true });
-    // also enable on touch/start
     document.body.addEventListener('touchstart', () => { enableSoundsOnFirstClick(); }, { once: true });
-
+    
     // ----------------------------- APP DATA -----------------------------
     let appData = { students: [], daily: [], bonus: [] };
     let editIdx = null;
     let duckCount = 0;
     let isAdmin = false;
-
+    
     window.addEventListener('online', () => { initApp(); });
     window.addEventListener('offline', () => { console.warn("Offline"); });
-
+    
     async function syncCloud(method, data = null) {
         const options = { method, headers: { 'Content-Type': 'application/json' } };
         if (data) options.body = JSON.stringify(data);
         const res = await fetch('/api/data', options);
         return method === 'GET' ? await res.json() : null;
     }
-
+    
     async function initApp() {
         if (!navigator.onLine) { loadLocalBackup(); renderAll(); return; }
         try {
@@ -416,25 +428,25 @@
             renderAll();
         } catch (e) { loadLocalBackup(); renderAll(); }
     }
-
+    
     function loadLocalBackup() {
         appData.students = JSON.parse(localStorage.getItem('stu_final_v2')) || [];
         appData.daily = JSON.parse(localStorage.getItem('stu_daily')) || [];
         appData.bonus = JSON.parse(localStorage.getItem('stu_bonus')) || [];
     }
-
+    
     async function triggerSave() {
         if (navigator.onLine) await syncCloud('POST', appData);
         localStorage.setItem('stu_final_v2', JSON.stringify(appData.students));
         localStorage.setItem('stu_daily', JSON.stringify(appData.daily));
         localStorage.setItem('stu_bonus', JSON.stringify(appData.bonus));
     }
-
+    
     function hideSplash() {
         document.getElementById('splash-screen').classList.add('splash-hidden');
         document.body.classList.add('app-loaded');
     }
-
+    
     window.addEventListener('load', () => {
         const startBtn = document.getElementById('start-btn');
         const video = document.getElementById('splash-video');
@@ -442,10 +454,10 @@
         const audioEl = document.getElementById('startup-sound');
         document.getElementById('loader').style.display = 'none';
         startBtn.style.display = 'inline-block';
-
+        
+        // START BUTTON: NO SOUND AT ALL
         startBtn.addEventListener('click', () => {
-            enableSoundsOnFirstClick();
-            playPowerUpSound();
+            // intentionally no sound
             audioEl.play().catch(e => {}); 
             logo.style.display = 'none';
             document.querySelector('.logo-text').style.display = 'none';
@@ -457,9 +469,9 @@
             initApp(); 
         });
     });
-
+    
     function showPage(pageId) {
-        playPowerUpSound();
+        playPowerUpSound();  // tab switching gets power-up
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
@@ -468,7 +480,7 @@
         if (pageId === 'monthly') setTimeout(populateStudentSelect, 50);
         renderAll();
     }
-
+    
     function toggleFullLeaderboard() {
         playPowerUpSound();
         const list = document.getElementById('full-leaderboard');
@@ -476,19 +488,17 @@
         list.classList.toggle('show');
         btn.innerText = list.classList.contains('show') ? "Hide Rankings" : "View Full Rankings";
     }
-
-    // Daily form submission with XP check: negative XP -> pipe sound, else powerup
+    
+    // Daily form submission: negative XP -> custom pipe, else power-up
     document.getElementById('dailyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const xpInputVal = document.getElementById('d-xp').value;
         const xpNum = parseInt(xpInputVal) || 0;
-        // Play appropriate sound BEFORE saving
         if (xpNum < 0) {
-            playPipeSound();   // cartoon pipe for subtracting points
+            playCustomPipeSound();   // custom cartoon pipe for negative XP
         } else {
             playPowerUpSound();
         }
-        
         const entry = {
             name: document.getElementById('d-name').value.trim(),
             sti: document.getElementById('d-sti').value,
@@ -502,19 +512,19 @@
         document.getElementById('d-xp').value = "0";
         renderDaily();
     });
-
+    
     function renderDaily() {
         const list = document.getElementById('dailyList');
         const leaderboardUI = document.getElementById('leaderboard-content');
         const fullLeaderboardUI = document.getElementById('full-leaderboard');
         const search = document.getElementById('searchDaily').value.toLowerCase();
         list.innerHTML = '';
-
+        
         const totals = {};
         appData.daily.forEach(l => { totals[l.name] = (totals[l.name] || 0) + l.xp; });
         const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
         const top = allSorted.slice(0,3);
-
+        
         if(top.length > 0) {
             leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">TOP PERFORMERS</div>
                 <div class="leaderboard-ranks">${top.map((t,i)=>`<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
@@ -523,7 +533,7 @@
             leaderboardUI.innerHTML = "🏆 No XP data yet.";
             fullLeaderboardUI.innerHTML = "";
         }
-
+        
         appData.daily.forEach((l, i) => {
             if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
             const xpSign = l.xp > 0 ? '+' : '';
@@ -532,7 +542,7 @@
                 <div style="font-size:0.8rem; opacity:0.6">${l.date}</div><div>${escapeHtml(l.notes)}</div></div>`;
         });
     }
-
+    
     function getStatus(txt, override) {
         if (override !== "auto") {
             const map = { good: ["Excelling", "#2e7d32"], developing: ["Developing", "#ffa000"], support: ["Support Needed", "#d32f2f"] };
@@ -543,10 +553,10 @@
         if (["yếu", "cần hỗ trợ", "support", "weak"].some(w => t.includes(w))) return { label: "Support Needed", color: "#d32f2f" };
         return { label: "Developing", color: "#ffa000" };
     }
-
+    
     document.getElementById('studentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        playPowerUpSound();  // saving monthly always powerup
+        playPowerUpSound();  // saving monthly record = power-up
         const data = {
             name: document.getElementById('name').value, sti: document.getElementById('sti').value,
             unit: document.getElementById('unit').value, course: document.getElementById('course').value,
@@ -558,7 +568,7 @@
         await triggerSave();
         e.target.reset(); renderMonthly(); populateStudentSelect();
     });
-
+    
     function renderMonthly() {
         const list = document.getElementById('studentList');
         const search = document.getElementById('searchInput').value.toLowerCase();
@@ -576,7 +586,7 @@
             </div>`;
         });
     }
-
+    
     function editStudent(i) {
         playPowerUpSound();
         const s = appData.students[i];
@@ -587,20 +597,20 @@
         document.getElementById('statusOverride').value = s.statusOverride || "auto";
         editIdx = i; window.scrollTo(0,0);
     }
-
+    
     function duckSecret() {
         playPowerUpSound();
         duckCount++;
         if(duckCount === 8) { isAdmin = !isAdmin; alert(isAdmin ? "ADMIN UNLOCKED" : "ADMIN LOCKED"); duckCount = 0; renderBonus(); }
     }
-
+    
     document.getElementById('bonusForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         playPowerUpSound();
         appData.bonus.unshift({ name: document.getElementById('b-name').value, msg: document.getElementById('b-msg').value, date: new Date().toLocaleString() });
         await triggerSave(); e.target.reset(); renderBonus();
     });
-
+    
     function renderBonus() {
         const list = document.getElementById('bonusList');
         list.innerHTML = '';
@@ -609,32 +619,33 @@
                 <strong>${escapeHtml(b.name)}</strong> <span style="font-size:0.6rem;">${escapeHtml(b.date)}</span><p>"${escapeHtml(b.msg)}"</p></div>`;
         });
     }
-
+    
+    // DELETE function: always play custom pipe sound (for any deletion)
     async function deleteItem(type, i) {
         if(!confirm("Delete?")) return;
-        playPipeSound();  // deletion uses cartoon pipe (negative/destructive)
+        playCustomPipeSound();   // deletion uses custom cartoon pipe.wav
         if(type === 'daily') appData.daily.splice(i, 1);
         if(type === 'monthly') appData.students.splice(i, 1);
         if(type === 'bonus') appData.bonus.splice(i, 1);
         await triggerSave(); renderAll();
         if(type === 'monthly') populateStudentSelect();
     }
-
+    
     function toggleTheme() {
         playPowerUpSound();
         const isLight = document.body.getAttribute('data-theme') === 'light';
         document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
         document.getElementById('themeToggleBtn').innerText = isLight ? "☀️ Light" : "🌙 Dark";
     }
-
+    
     function renderAll() { renderDaily(); renderMonthly(); renderBonus(); }
     document.getElementById('d-date').valueAsDate = new Date();
-
+    
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
     }
-
+    
     function populateStudentSelect() {
         const select = document.getElementById('studentSelectForPdf');
         if (!select) return;
@@ -652,7 +663,7 @@
             select.appendChild(option);
         }
     }
-
+    
     function exportToPDFViaPrint() {
         playPowerUpSound();
         const select = document.getElementById('studentSelectForPdf');
@@ -663,7 +674,7 @@
         }
         const studentsToExport = selectedIndices.map(i => appData.students[i]).filter(s => s);
         if (studentsToExport.length === 0) return;
-
+        
         const printDiv = document.createElement('div');
         printDiv.className = 'print-area';
         printDiv.style.position = 'absolute';
@@ -674,14 +685,14 @@
         printDiv.style.padding = '20px';
         printDiv.style.boxSizing = 'border-box';
         printDiv.style.zIndex = '99999';
-
+        
         const title = document.createElement('h1');
         title.textContent = 'SSAP 2.0 - Student Report';
         title.style.textAlign = 'center';
         title.style.color = '#2e7d32';
         title.style.marginBottom = '30px';
         printDiv.appendChild(title);
-
+        
         studentsToExport.forEach(student => {
             const status = getStatus(student.overall, student.statusOverride || "auto");
             const card = document.createElement('div');
@@ -692,7 +703,6 @@
             card.style.padding = '20px';
             card.style.marginBottom = '20px';
             card.style.pageBreakInside = 'avoid';
-            card.style.breakInside = 'avoid';
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
                     <div><h3 style="margin:0;">${escapeHtml(student.name)} <span style="opacity:0.5;">#${escapeHtml(student.sti || '000')}</span></h3></div>
@@ -707,20 +717,19 @@
             `;
             printDiv.appendChild(card);
         });
-
+        
         document.body.appendChild(printDiv);
         window.print();
         setTimeout(() => { document.body.removeChild(printDiv); }, 1000);
     }
-
-    // attach event listeners for all interactive buttons with sounds
+    
+    // attach event listeners (all with sounds except start button)
     document.getElementById('viewAllRankBtn')?.addEventListener('click', toggleFullLeaderboard);
     document.getElementById('refreshStudentListBtn')?.addEventListener('click', () => { playPowerUpSound(); populateStudentSelect(); });
     document.getElementById('exportPdfBtn')?.addEventListener('click', exportToPDFViaPrint);
     document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
     document.getElementById('the-duck')?.addEventListener('click', duckSecret);
     
-    // tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const page = btn.getAttribute('data-page');
