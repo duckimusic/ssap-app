@@ -512,42 +512,53 @@
         renderDaily();
     });
     
-    function renderDaily() {
-        const list = document.getElementById('dailyList');
-        const leaderboardUI = document.getElementById('leaderboard-content');
-        const fullLeaderboardUI = document.getElementById('full-leaderboard');
-        const search = document.getElementById('searchDaily').value.toLowerCase();
-        list.innerHTML = '';
-        
-        const totals = {};
-        appData.daily.forEach(l => { totals[l.name] = (totals[l.name] || 0) + l.xp; });
-        const allSorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
-        const top = allSorted.slice(0,3);
-        if(top.length > 0) {
-            leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">TOP PERFORMERS</div>
-                <div class="leaderboard-ranks">${top.map((t,i)=>`<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
-            fullLeaderboardUI.innerHTML = allSorted.map((t,i)=>`<div class="rank-item-mini"><span>${i+1}. ${t[0]}</span><span style="color:var(--xp-gold);">${t[1]} XP</span></div>`).join('');
-        } else {
-            leaderboardUI.innerHTML = "🏆 No XP data yet.";
-            fullLeaderboardUI.innerHTML = "";
-        }
-        
-        appData.daily.forEach((l, i) => {
-            if(!l.name.toLowerCase().includes(search) && !l.sti.includes(search)) return;
-            const xpSign = l.xp > 0 ? '+' : '';
-            list.innerHTML += `<div class="student-card" data-daily-index="${i}">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><strong>${escapeHtml(l.name)}</strong> <span class="xp-badge" style="background:${l.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${l.xp} XP</span>
-                    <div style="font-size:0.8rem; opacity:0.6">${l.date}</div></div>
-                    <div class="action-bar">
-                        <button class="delete-btn" data-type="daily" data-index="${i}" aria-label="Delete">🗑️</button>
-                    </div>
-                </div>
-                <div>${escapeHtml(l.notes)}</div>
-            </div>`;
-        });
-        attachDeleteEvents();
+function renderDaily() {
+    const list = document.getElementById('dailyList');
+    const leaderboardUI = document.getElementById('leaderboard-content');
+    const fullLeaderboardUI = document.getElementById('full-leaderboard');
+    const search = document.getElementById('searchDaily').value.toLowerCase();
+    list.innerHTML = '';
+
+    // --- XP totals for leaderboard (unchanged, uses all entries) ---
+    const totals = {};
+    appData.daily.forEach(l => { totals[l.name] = (totals[l.name] || 0) + l.xp; });
+    const allSorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    const top = allSorted.slice(0, 3);
+    if (top.length > 0) {
+        leaderboardUI.innerHTML = `<div style="font-weight:800; color:var(--xp-gold); margin-bottom:10px;">TOP PERFORMERS</div>
+            <div class="leaderboard-ranks">${top.map((t, i) => `<div class="rank-card"><span>${i+1}. ${t[0]}</span><span class="xp-badge">${t[1]} XP</span></div>`).join('')}</div>`;
+        fullLeaderboardUI.innerHTML = allSorted.map((t, i) => `<div class="rank-item-mini"><span>${i+1}. ${t[0]}</span><span style="color:var(--xp-gold);">${t[1]} XP</span></div>`).join('');
+    } else {
+        leaderboardUI.innerHTML = "🏆 No XP data yet.";
+        fullLeaderboardUI.innerHTML = "";
     }
+
+    // --- NEW: Sort daily entries by date (most recent first) ---
+    const sortedDaily = [...appData.daily].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    sortedDaily.forEach((entry) => {
+        // Find the original index in appData.daily (needed for deletion)
+        const originalIndex = appData.daily.findIndex(e => e === entry);
+        if (originalIndex === -1) return; // safety
+
+        // Apply search filter
+        if (!entry.name.toLowerCase().includes(search) && !entry.sti.includes(search)) return;
+
+        const xpSign = entry.xp > 0 ? '+' : '';
+        list.innerHTML += `<div class="student-card" data-daily-index="${originalIndex}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><strong>${escapeHtml(entry.name)}</strong> <span class="xp-badge" style="background:${entry.xp<0?'#d32f2f':'var(--xp-gold)'}">${xpSign}${entry.xp} XP</span>
+                <div style="font-size:0.8rem; opacity:0.6">${entry.date}</div></div>
+                <div class="action-bar">
+                    <button class="delete-btn" data-type="daily" data-index="${originalIndex}" aria-label="Delete">🗑️</button>
+                </div>
+            </div>
+            <div>${escapeHtml(entry.notes)}</div>
+        </div>`;
+    });
+
+    attachDeleteEvents();
+}
     
     function getStatus(txt, override) {
         if (override !== "auto") {
